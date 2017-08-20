@@ -54,6 +54,7 @@ public class AutoDriverOnlySimSetup extends BasicSimSetup implements SimSetup {
    */
   public enum TrafficType {
     UNIFORM_RANDOM,
+    UNIFORM_RANDOM_NO_LANE_CROSS,
     UNIFORM_TURNBASED,
     HVDIRECTIONAL_RANDOM,
     FILE,
@@ -68,7 +69,7 @@ public class AutoDriverOnlySimSetup extends BasicSimSetup implements SimSetup {
   /** Whether the batch mode is on */
   private boolean isBatchMode = true;
   /** The traffic type */
-  private TrafficType trafficType = TrafficType.UNIFORM_RANDOM;
+  private TrafficType trafficType = TrafficType.UNIFORM_RANDOM_NO_LANE_CROSS;//default setting is "TrafficType.UNIFORM_RANDOM"
   /** The traffic level in the horizontal direction */
   private double hTrafficLevel;
   /** The traffic level in the vertical direction */
@@ -169,7 +170,15 @@ public class AutoDriverOnlySimSetup extends BasicSimSetup implements SimSetup {
     this.trafficType = TrafficType.UNIFORM_RANDOM;
     this.trafficLevel = trafficLevel;
   }
-
+  /**
+   * Set the uniform random traffic with no trajectories blocking same direction traffic.
+   *
+   * @param trafficLevel  the traffic level
+   */
+  public void setUniformRandomTrafficNoLaneCrossing(double trafficLevel){
+	  this.trafficType = TrafficType.UNIFORM_RANDOM_NO_LANE_CROSS;
+	  this.trafficLevel = trafficLevel;
+  }
   /**
    * Set the uniform turn-based traffic.
    *
@@ -287,6 +296,9 @@ public class AutoDriverOnlySimSetup extends BasicSimSetup implements SimSetup {
       case UNIFORM_RANDOM:
         GridMapUtil.setUniformRandomSpawnPoints(layout, trafficLevel);
         break;
+      case UNIFORM_RANDOM_NO_LANE_CROSS:
+    	GridMapUtil.setUniformRandomSpawnPointsNoLanesCross(layout, trafficLevel);
+    	break;
       case UNIFORM_TURNBASED:
         GridMapUtil.setUniformTurnBasedSpawnPoints(layout, trafficLevel);
         break;

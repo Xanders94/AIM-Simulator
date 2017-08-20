@@ -414,7 +414,7 @@ public class AutoDriverOnlySimulator implements Simulator {
       //disable spawns where destination involves turning left from right lane or right from left lane
       //if vehicle is turning
       try {
-	      if(vehicle.getDriver().getCurrentLane().getInitialHeading() != vehicle.getDriver().getDestination().getIndexLane().getInitialHeading()){
+	      /*if(vehicle.getDriver().getCurrentLane().getInitialHeading() != vehicle.getDriver().getDestination().getIndexLane().getInitialHeading()){
 	    	  //if vehicle is in left Lane
 	    	  if(!vehicle.getDriver().getCurrentLane().hasLeftNeighbor()){
 	    		  //if destination heading is within 180 degrees turning left
@@ -426,7 +426,7 @@ public class AutoDriverOnlySimulator implements Simulator {
 	    	  Lane dest = vehicle.getDriver().getDestination().getLanes().get(0);
 	
 	    	  return true;
-	      }
+	      }*/
       } catch(Exception e){
     	  //do something in case of exception
       }

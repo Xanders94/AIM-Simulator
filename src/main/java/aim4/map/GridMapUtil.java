@@ -55,6 +55,7 @@ import aim4.map.SpawnPoint.SpawnSpec;
 import aim4.map.SpawnPoint.SpawnSpecGenerator;
 import aim4.map.destination.DestinationSelector;
 import aim4.map.destination.RandomDestinationSelector;
+import aim4.map.destination.RandomDestinationSelectorNoLaneCross;
 import aim4.map.destination.RatioDestinationSelector;
 import aim4.map.destination.TurnBasedDestinationSelector;
 import aim4.map.lane.Lane;
@@ -523,6 +524,15 @@ public class GridMapUtil {
       sp.setVehicleSpecChooser(
         new UniformSpawnSpecGenerator(trafficLevel,
                                       new RandomDestinationSelector(map)));
+    }
+  }
+  
+  public static void setUniformRandomSpawnPointsNoLanesCross(GridMap map,
+                                                 double trafficLevel) {
+    for(SpawnPoint sp : map.getSpawnPoints()) {
+      sp.setVehicleSpecChooser(
+        new UniformSpawnSpecGenerator(trafficLevel,
+                                      new RandomDestinationSelectorNoLaneCross(map)));
     }
   }
 
