@@ -42,6 +42,7 @@ import aim4.im.RoadBasedTrackModel;
 import aim4.im.v2i.RequestHandler.ApproxSimpleTrafficSignalRequestHandler;
 import aim4.im.v2i.V2IManager;
 import aim4.im.v2i.RequestHandler.ApproxStopSignRequestHandler;
+import aim4.im.v2i.RequestHandler.Approx2PhasesSimpleTrafficSignalRequestHandler;
 import aim4.im.v2i.RequestHandler.Approx4PhasesTrafficSignalRequestHandler;
 import aim4.im.v2i.RequestHandler.ApproxNPhasesTrafficSignalRequestHandler;
 import aim4.im.v2i.RequestHandler.ApproxNPhasesTrafficSignalRequestHandler.CyclicSignalController;
@@ -402,7 +403,31 @@ public class GridMapUtil {
       }
     }
   }
-
+  public static void set2PhaseApproxSimpleTrafficLightManagers(
+          GridMap layout,
+          double currentTime,
+          ReservationGridManager.Config config,
+          double greenLightDuration,
+          double yellowLightDuration) {
+	
+	layout.removeAllManagers();
+	for (int column = 0; column < layout.getColumns(); column++) {
+		for (int row = 0; row < layout.getRows(); row++) {
+			List<Road> roads = layout.getRoads(column, row);
+			RoadBasedIntersection intersection = new RoadBasedIntersection(roads);
+			RoadBasedTrackModel trajectoryModel =
+			new RoadBasedTrackModel(intersection);
+			V2IManager im =
+			new V2IManager(intersection, trajectoryModel, currentTime,
+			config, layout.getImRegistry());
+			Approx2PhasesSimpleTrafficSignalRequestHandler requestHandler =
+			new Approx2PhasesSimpleTrafficSignalRequestHandler(greenLightDuration,
+			                        yellowLightDuration);
+			im.setPolicy(new BasePolicy(im, requestHandler));
+			layout.setManager(column, row, im);
+		}
+	}
+}
 
   /**
    * Set the approximate 4 phases traffic light managers at all intersections.

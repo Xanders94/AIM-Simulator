@@ -67,7 +67,9 @@ public class AutoDriverOnlySimSetup extends BasicSimSetup implements SimSetup {
   /** Whether the base line mode is on */
   private boolean isBaseLineMode = false;
   /** Whether the batch mode is on */
-  private boolean isBatchMode = true;
+  private boolean isBatchMode = false;
+  /** Whether the light control mode is on*/
+  private boolean isLightControlMode = true;
   /** The traffic type */
   private TrafficType trafficType = TrafficType.UNIFORM_RANDOM_NO_LANE_CROSS;//default setting is "TrafficType.UNIFORM_RANDOM"
   /** The traffic level in the horizontal direction */
@@ -288,8 +290,10 @@ public class AutoDriverOnlySimSetup extends BasicSimSetup implements SimSetup {
       if (isBatchMode) {
         GridMapUtil.setBatchManagers(layout, currentTime, gridConfig,
                                         processingInterval);
-      } else {
+      } else if(!isLightControlMode) {
         GridMapUtil.setFCFSManagers(layout, currentTime, gridConfig);
+      } else {
+    	  GridMapUtil.set2PhaseApproxSimpleTrafficLightManagers(layout, currentTime, gridConfig, 30, 4);
       }
 
       switch(trafficType) {
