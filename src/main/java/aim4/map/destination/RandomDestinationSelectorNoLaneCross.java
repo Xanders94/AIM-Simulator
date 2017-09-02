@@ -82,7 +82,7 @@ public class RandomDestinationSelectorNoLaneCross implements DestinationSelector
     Road currentRoad = Debug.currentMap.getRoad(currentLane);
     Road dest =
       destinationRoads.get(Util.random.nextInt(destinationRoads.size()));
-    while(dest.getDual() == currentRoad || willNotCrossLanes(currentLane,dest)) {
+    while(dest.getDual() == currentRoad || !willNotCrossLanes(currentLane,dest)) {
       dest =
         destinationRoads.get(Util.random.nextInt(destinationRoads.size()));
     }
@@ -90,28 +90,71 @@ public class RandomDestinationSelectorNoLaneCross implements DestinationSelector
   }
   private boolean willNotCrossLanes(Lane currentLane, Road dest){
 	  
+	  //allow straight paths
+	  if(pathIsStraight(currentLane.getInitialHeading(), dest.getIndexLane().getInitialHeading())){
+		  return true;
+	  }
 	  //sim is left hand drive
 	  //if there is a left lane, exclude right hand turns
 	  //else exclude left hand turns
 	  if(currentLane.hasLeftNeighbor()){
 		  if(isLeftHandTurn(currentLane.getInitialHeading(), dest.getIndexLane().getInitialHeading())){
-			  return true;
-		  } else {
 			  return false;
+		  } else {
+			  return true;
 		  }
 	  }else{
 		  if(isLeftHandTurn(currentLane.getInitialHeading(), dest.getIndexLane().getInitialHeading())){
-			  return false;
-		  }else{
 			  return true;
+		  }else{
+			  return false;
 		  }
 	  }
   }
+  /**
+   * @author Alexander Humphry
+   * 
+   * returns true if a left hand turn is required to travel from the initial heading to the final heading
+   * @param initHeading
+   * @param finalHeading
+   * @return
+   */
   private boolean isLeftHandTurn(double initHeading, double finalHeading){
+	  if(initHeading < Math.PI){
+		  //if heading is in first 180 degrees
+		  if(initHeading < finalHeading && finalHeading < initHeading + Math.PI){
+			  return false;
+		  }
+		  return true;
+	  } else {
+		  if(initHeading - Math.PI < finalHeading && finalHeading < initHeading){
+			  return true;
+		  }
+		  return false;
+	  }
+	  /* old code
 	  if(initHeading > finalHeading){
 		  return true;
 	  }
 	  if(initHeading + Math.PI < finalHeading){
+		  return true;
+	  }
+	  return false;*/
+  }
+  /**
+   * @author Alexander Humphry
+   * 
+   * returns true if the path requires a turn of no more than PI * 0.1 radians
+   * @param initHeading
+   * @param finalHeading
+   * @return
+   */
+  private boolean pathIsStraight(double initHeading, double finalHeading){
+	  if(Math.abs(initHeading - finalHeading) < Math.PI * 0.1){
+		  return true;
+	  }
+	  if(Math.abs(initHeading + 2*Math.PI - finalHeading) < Math.PI * 0.1 || 
+			  Math.abs(initHeading - 2*Math.PI - finalHeading) < Math.PI * 0.1){
 		  return true;
 	  }
 	  return false;
