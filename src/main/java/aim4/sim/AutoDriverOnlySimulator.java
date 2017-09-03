@@ -31,7 +31,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package aim4.sim;
 
 import java.awt.Color;
-
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -47,6 +46,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.Random;
 
 import aim4.UDP.SimulatorSerializer;
 import aim4.config.Debug;
@@ -54,6 +54,7 @@ import aim4.config.DebugPoint;
 import aim4.driver.AutoDriver;
 import aim4.driver.DriverSimView;
 import aim4.driver.ProxyDriver;
+import aim4.driver.Wallet;
 import aim4.im.IntersectionManager;
 import aim4.im.v2i.V2IManager;
 import aim4.map.DataCollectionLine;
@@ -125,7 +126,12 @@ public class AutoDriverOnlySimulator implements Simulator {
   private int totalBitsTransmittedByCompletedVehicles;
   /** The total number of bits received by the completed vehicles */
   private int totalBitsReceivedByCompletedVehicles;
-
+  /** Random Number Generator*/
+  private Random rand;
+  /** bid parameters*/
+  private double maxBid = 0.5;
+  private double minBid = 0.05;
+  /** the communications module - SimCreator*/
   private SimulatorSerializer simSerializer;
   private boolean hasRun;
   /////////////////////////////////
@@ -145,6 +151,8 @@ public class AutoDriverOnlySimulator implements Simulator {
     numOfCompletedVehicles = 0;
     totalBitsTransmittedByCompletedVehicles = 0;
     totalBitsReceivedByCompletedVehicles = 0;
+    
+    rand = new Random();
     
     //send UDP Alex Humphry
     //simSerialiser = new SimulatorSerialiser(this, 2500, "192.168.62.131");//linux machine
@@ -463,6 +471,7 @@ public class AutoDriverOnlySimulator implements Simulator {
     driver.setCurrentLane(lane);
     driver.setSpawnPoint(spawnPoint);
     driver.setDestination(spawnSpec.getDestinationRoad());
+    driver.setWallet(new Wallet());
     vehicle.setDriver(driver);
 
     return vehicle;
@@ -1066,7 +1075,7 @@ public class AutoDriverOnlySimulator implements Simulator {
   /**
    * determine if a heading is right of another
    */
-  public boolean resolveHeadingChange(double initHeading, double finalHeading){
+  /*public boolean resolveHeadingChange(double initHeading, double finalHeading){
 	  if(initHeading > Math.PI){
 		  if(initHeading < finalHeading){
 			  return true;
@@ -1075,5 +1084,13 @@ public class AutoDriverOnlySimulator implements Simulator {
 		  }
 	  }
 	  return false;
+  }*/
+  private double randomRange(double min, double max){
+	  Double minStore = min*100;
+	  Double maxStore = max*100;
+	  int minInt = minStore.intValue();
+	  int maxInt = maxStore.intValue();
+	  int resultToConvert = rand.nextInt((maxInt - minInt) + 1) + minInt;
+	  return resultToConvert/100.0;
   }
 }

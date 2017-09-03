@@ -59,6 +59,16 @@ public class AutoDriverOnlySimSetup extends BasicSimSetup implements SimSetup {
     HVDIRECTIONAL_RANDOM,
     FILE,
   }
+  /**
+   * The Request Handler Type
+   */
+  public enum ModeType {
+	  BASE_MODE,
+	  LIGHT_MODE,
+	  BATCH_MODE,
+	  BID_MODE,
+	  FCFS_MODE,
+  }
 
   /////////////////////////////////
   // PRIVATE FIELDS
@@ -70,6 +80,10 @@ public class AutoDriverOnlySimSetup extends BasicSimSetup implements SimSetup {
   private boolean isBatchMode = false;
   /** Whether the light control mode is on*/
   private boolean isLightControlMode = true;
+  /** Whether the bidding variant of batch processing is enabled*/
+  private boolean isBidMode = false;
+  /** The Mode Type*/
+  private ModeType modeType = ModeType.BATCH_MODE;
   /** The traffic type */
   private TrafficType trafficType = TrafficType.UNIFORM_RANDOM_NO_LANE_CROSS;//default setting is "TrafficType.UNIFORM_RANDOM"
   /** The traffic level in the horizontal direction */
@@ -285,11 +299,40 @@ public class AutoDriverOnlySimSetup extends BasicSimSetup implements SimSetup {
 */
 
     Debug.SHOW_VEHICLE_COLOR_BY_MSG_STATE = true;
-
-    if (!isBaseLineMode) {
+    
+    switch(modeType){
+    case FCFS_MODE:
+    	GridMapUtil.setFCFSManagers(layout, currentTime, gridConfig);
+    	setTrafficMode(layout);
+        break;
+    case BATCH_MODE:
+    	GridMapUtil.setBatchManagers(layout, currentTime, gridConfig,
+				  processingInterval);
+    	setTrafficMode(layout);
+    	break;
+    case BID_MODE:
+    	GridMapUtil.setBidBatchManagers(layout, currentTime, gridConfig, 
+				  processingInterval);
+    	setTrafficMode(layout);
+    	break;
+    case LIGHT_MODE:
+    	GridMapUtil.set2PhaseApproxSimpleTrafficLightManagers(layout, currentTime, gridConfig, 30, 4);
+    	setTrafficMode(layout);
+    	break;
+    case BASE_MODE:
+    	GridMapUtil.setFCFSManagers(layout, currentTime, gridConfig);
+        GridMapUtil.setBaselineSpawnPoints(layout, 12.0);
+    }
+    //old logic
+    /*if (!isBaseLineMode) {
       if (isBatchMode) {
-        GridMapUtil.setBatchManagers(layout, currentTime, gridConfig,
-                                        processingInterval);
+    	  if(!isBidMode){
+    		  GridMapUtil.setBatchManagers(layout, currentTime, gridConfig,
+    				  processingInterval);
+    	  } else {
+    		  GridMapUtil.setBidBatchManagers(layout, currentTime, gridConfig, 
+    				  processingInterval);
+    	  }
       } else if(!isLightControlMode) {
         GridMapUtil.setFCFSManagers(layout, currentTime, gridConfig);
       } else {
@@ -318,11 +361,32 @@ public class AutoDriverOnlySimSetup extends BasicSimSetup implements SimSetup {
     } else {
       GridMapUtil.setFCFSManagers(layout, currentTime, gridConfig);
       GridMapUtil.setBaselineSpawnPoints(layout, 12.0);
-    }
+    }*/
 
 
     V2IPilot.DEFAULT_STOP_DISTANCE_BEFORE_INTERSECTION =
       stopDistBeforeIntersection;
     return new AutoDriverOnlySimulator(layout);
+  }
+	  private void setTrafficMode(GridMap layout){
+		  switch(trafficType) {
+	      case UNIFORM_RANDOM:
+	        GridMapUtil.setUniformRandomSpawnPoints(layout, trafficLevel);
+	        break;
+	      case UNIFORM_RANDOM_NO_LANE_CROSS:
+	    	GridMapUtil.setUniformRandomSpawnPointsNoLanesCross(layout, trafficLevel);
+	    	break;
+	      case UNIFORM_TURNBASED:
+	        GridMapUtil.setUniformTurnBasedSpawnPoints(layout, trafficLevel);
+	        break;
+	      case HVDIRECTIONAL_RANDOM:
+	        GridMapUtil.setDirectionalSpawnPoints(layout,
+	                                                 hTrafficLevel,
+	                                                 vTrafficLevel);
+	        break;
+	      case FILE:
+	        GridMapUtil.setUniformRatioSpawnPoints(layout, trafficVolumeFileName);
+	        break;
+	  }
   }
 }

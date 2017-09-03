@@ -179,8 +179,8 @@ public class WalletBasedReordering implements ReorderingStrategy {
 	    double oldBid = 0;
 	    
 	    for(IndexedProposal iProposal : iProposals) {
-	      int laneId = iProposal.getProposal().getArrivalLaneID();
-	      double bid = iProposal.getProposal().getBid();//
+	      int laneId = iProposal.getProposal().getDepartureLaneID();
+	      double bid = iProposal.getProposal().getBid();
 	      Road road = Debug.currentMap.getRoad(laneId);
 	      if (partition.containsKey(road)) {
 	        partition.get(road).add(iProposal);

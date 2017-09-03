@@ -50,6 +50,7 @@ import aim4.im.v2i.RequestHandler.BatchModeRequestHandler;
 import aim4.im.v2i.RequestHandler.FCFSRequestHandler;
 import aim4.im.v2i.RequestHandler.RequestHandler;
 import aim4.im.v2i.batch.RoadBasedReordering;
+import aim4.im.v2i.batch.WalletBasedReordering;
 import aim4.im.v2i.policy.BasePolicy;
 import aim4.im.v2i.reservation.ReservationGridManager;
 import aim4.map.SpawnPoint.SpawnSpec;
@@ -361,6 +362,38 @@ public class GridMapUtil {
         RequestHandler rh =
           new BatchModeRequestHandler(
             new RoadBasedReordering(processingInterval),
+            new BatchModeRequestHandler.RequestStatCollector());
+        im.setPolicy(new BasePolicy(im, rh));
+        layout.setManager(column, row, im);
+      }
+    }
+  }
+  /**
+   * Set the bidding batch managers at all intersections.
+   *
+   * @param layout              the map
+   * @param currentTime         the current time
+   * @param config              the reservation grid manager configuration
+   * @param processingInterval  the processing interval
+   */
+  public static void setBidBatchManagers(GridMap layout,
+                                      double currentTime,
+                                      ReservationGridManager.Config config,
+                                      double processingInterval) {
+    layout.removeAllManagers();
+    for(int column = 0; column < layout.getColumns(); column++) {
+      for(int row = 0; row < layout.getRows(); row++) {
+        List<Road> roads = layout.getRoads(column, row);
+        RoadBasedIntersection intersection = new RoadBasedIntersection(roads);
+        RoadBasedTrackModel trajectoryModel =
+          new RoadBasedTrackModel(intersection);
+        V2IManager im =
+          new V2IManager(intersection, trajectoryModel, currentTime,
+                         config, layout.getImRegistry());
+        //bidding reordering strategy input
+        RequestHandler rh =
+          new BatchModeRequestHandler(
+            new WalletBasedReordering(processingInterval),
             new BatchModeRequestHandler.RequestStatCollector());
         im.setPolicy(new BasePolicy(im, rh));
         layout.setManager(column, row, im);

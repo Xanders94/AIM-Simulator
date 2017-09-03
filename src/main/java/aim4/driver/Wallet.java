@@ -1,5 +1,7 @@
 package aim4.driver;
 
+import java.util.Random;
+
 public class Wallet {
 	
 	  /**
@@ -20,10 +22,17 @@ public class Wallet {
 	  /**
 	   * a blank constructor, sets all values in the wallet to zero
 	   */
+	  private Random rand;
+	  
+	  private static final double min = 0.05;
+	  private static final double max = 0.50;
+	  
 	  public Wallet(){
-		  bid = 0;
-		  totalFundsAvailable = 0;
-		  intersectionsInTrip = 0;
+		  rand = new Random();
+		  totalFundsAvailable = randomRange(min,max);
+		  bid = totalFundsAvailable;
+		  intersectionsInTrip = 1;
+		  
 	  }
 	  public Wallet(double initialBid, double initialFunds, int intersectionsInTrip){
 		  bid = initialBid;
@@ -57,14 +66,14 @@ public class Wallet {
 	}
 	
 	public void setWalletAmount(double amount){
-		
+		this.totalFundsAvailable = amount;
 	}
 	/**
 	 * @author Alex Humphry
 	 * 
 	 * subtracts current bid from funds, calculates new bid to store
 	 */
-	public void acceptBid() {
+	/*public void acceptBid() {
 		totalFundsAvailable -= bid;
 		intersectionsInTrip -= 1;
 		if(intersectionsInTrip > 0){
@@ -75,14 +84,13 @@ public class Wallet {
 		} else {
 			bid = 0;
 		}
-	}
+	}*/
 	/**
 	 * subtracts current bid from funds, calculates new bid to store
 	 * @param modifier, % under or over new bid should be compared to default calculation
 	 */
-	public void acceptBid(double modifier) {
+	/*public void acceptBid(double modifier) {
 		totalFundsAvailable -= bid;
-		intersectionsInTrip -= 1;
 		if(intersectionsInTrip > 0){
 			bid = (totalFundsAvailable / intersectionsInTrip) * (modifier/100);
 			if(bid > totalFundsAvailable){
@@ -91,5 +99,14 @@ public class Wallet {
 		} else {
 			bid = 0;
 		}
-	}
+		intersectionsInTrip--;
+	}*/
+	  private double randomRange(double min, double max){
+		  Double minStore = min*100;
+		  Double maxStore = max*100;
+		  int minInt = minStore.intValue();
+		  int maxInt = maxStore.intValue();
+		  int resultToConvert = rand.nextInt((maxInt - minInt) + 1) + minInt;
+		  return resultToConvert/100.0;
+	  }
 }
