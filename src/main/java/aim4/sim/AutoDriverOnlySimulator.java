@@ -49,6 +49,7 @@ import java.util.TreeMap;
 import java.util.Random;
 
 import aim4.UDP.SimulatorSerializer;
+
 import aim4.config.Debug;
 import aim4.config.DebugPoint;
 import aim4.driver.AutoDriver;
@@ -128,11 +129,11 @@ public class AutoDriverOnlySimulator implements Simulator {
   private int totalBitsReceivedByCompletedVehicles;
   /** Random Number Generator*/
   private Random rand;
-  /** bid parameters*/
-  private double maxBid = 0.5;
-  private double minBid = 0.05;
   /** the communications module - SimCreator*/
+  private ArrayList<SimulatorSerializer> simCreatorConnections;
+  
   private SimulatorSerializer simSerializer;
+  
   private boolean hasRun;
   /////////////////////////////////
   // CLASS CONSTRUCTORS
@@ -162,6 +163,16 @@ public class AutoDriverOnlySimulator implements Simulator {
     //simSerialiser = new SimulatorSerialiser(this, 2500, "192.168.1.135");
     //pass reference of vinToVehicles list to serialiser for proxy vehicle addition
     //simSerialiser.setVinToVehicles(timeStep,vinToVehicles);
+    
+    simCreatorConnections = new ArrayList<SimulatorSerializer>();
+    
+    //add simulator connections
+    simCreatorConnections.add(new SimulatorSerializer(this,2502, "192.168.0.2",SimulatorSerializer.ODPair.NORTH_SOUTH)); //sim1
+    simCreatorConnections.add(new SimulatorSerializer(this,2504, "192.168.0.3",SimulatorSerializer.ODPair.EAST_WEST)); //sim2
+    simCreatorConnections.add(new SimulatorSerializer(this,2506, "192.168.0.4",SimulatorSerializer.ODPair.SOUTH_NORTH)); //sim3
+    simCreatorConnections.add(new SimulatorSerializer(this,2508, "192.168.0.5",SimulatorSerializer.ODPair.WEST_NORTH)); //sim4
+    simCreatorConnections.add(new SimulatorSerializer(this,2510, "192.168.0.6",SimulatorSerializer.ODPair.NORTH_EAST)); //sim5
+    
     hasRun = false;
     
   }
@@ -177,9 +188,15 @@ public class AutoDriverOnlySimulator implements Simulator {
    */
   @Override
   public synchronized AutoDriverOnlySimStepResult step(double timeStep) {
+	for(SimulatorSerializer simConnect : simCreatorConnections){
+		if(!simConnect.isInitialised() && this.getSimulationTime() > 50.0){
+			simConnect.setVinToVehicles(timeStep, vinToVehicles, simConnect.getPath());
+		}
+	}
 	if(!this.hasRun && !vinToVehicles.isEmpty()){
+		//old code
 		this.hasRun = simSerializer.setVinToVehicles(timeStep,vinToVehicles);
-		//this.hasRun = true;
+		this.hasRun = true;
 	}
     if (Debug.PRINT_SIMULATOR_STAGE) {
       System.err.printf("--------------------------------------\n");
@@ -412,7 +429,7 @@ public class AutoDriverOnlySimulator implements Simulator {
    * @param spawnPoint  the spawn point
    * @return Whether the spawn point can spawn any vehicle
    */
-  private boolean canSpawnVehicle(SpawnPoint spawnPoint) {
+  public boolean canSpawnVehicle(SpawnPoint spawnPoint) {
     // TODO: can be made much faster.
     Rectangle2D noVehicleZone = spawnPoint.getNoVehicleZone();
     for(VehicleSimView vehicle : vinToVehicles.values()) {
@@ -449,7 +466,7 @@ public class AutoDriverOnlySimulator implements Simulator {
    * @param spawnSpec   the spawn specification
    * @return the vehicle
    */
-  private VehicleSimView makeVehicle(SpawnPoint spawnPoint,
+  public VehicleSimView makeVehicle(SpawnPoint spawnPoint,
                                      SpawnSpec spawnSpec) {
     VehicleSpec spec = spawnSpec.getVehicleSpec();
     Lane lane = spawnPoint.getLane();

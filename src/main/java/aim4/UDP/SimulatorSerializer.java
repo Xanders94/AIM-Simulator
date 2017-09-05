@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
@@ -22,9 +23,11 @@ import aim4.map.SpawnPoint;
 import aim4.map.SpawnPoint.SpawnSpec;
 import aim4.map.lane.Lane;
 import aim4.msg.udp.Real2ProxyPVUpdate;
+import aim4.sim.AutoDriverOnlySimulator;
 import aim4.sim.Simulator;
 import aim4.vehicle.VehicleSimView;
 import aim4.vehicle.VehicleSpec;
+import aim4.vehicle.VehicleSpecDatabase;
 import aim4.vehicle.VinRegistry;
 import aim4.vehicle.BasicVehicle;
 import aim4.vehicle.ProxyVehicle;
@@ -35,15 +38,49 @@ import aim4.vehicle.BasicAutoVehicle;
  * 
  * @author Alexander Humphry
  * takes a simulator class and creates a String to send via UDP
+ * warning, only works with a single 4 way intersection
  */
 public class SimulatorSerializer {
+	
+	  /**
+	   * 
+	   * @author Alexander Humphry
+	   * specifies the origin/destination pair for the player vehicle
+	   */
+	  public enum ODPair {
+		  NORTH_SOUTH,
+		  NORTH_EAST,
+		  NORTH_WEST,
+		  
+		  SOUTH_NORTH,
+		  SOUTH_EAST,
+		  SOUTH_WEST,
+		  
+		  EAST_WEST,
+		  EAST_NORTH,
+		  EAST_SOUTH,
+		  
+		  WEST_EAST,
+		  WEST_NORTH,
+		  WEST_SOUTH,
+	  }
+	
 	String sendString;
-	Simulator sim;
+	AutoDriverOnlySimulator sim;
 	UDPSocket connection;
+	
 	ArrayList<VehicleSimView> vehicles;
 	ArrayList<VehicleSimView> outVehicles;
 	Map<Integer,VehicleSimView> vinToVehicles;
 	ArrayList<Integer> overwritePos;
+	VehicleSimView playerVehicle;
+	
+	boolean recieveEnable = false;
+	boolean initialised;
+	ODPair path = null;
+	
+	Random rand = new Random();
+	
 	//a list of all proxy vehicles created in this instance of SimulatorSerialiser
 	//Serialize
 	ArrayList<ProxyVehicle> playerVehicles = new ArrayList<ProxyVehicle>();
@@ -51,28 +88,60 @@ public class SimulatorSerializer {
 	//a mapping of vehicles to their simcreator vin values
 	HashMap<Integer,VehicleSimView> vehicleMapping = new HashMap<Integer,VehicleSimView>(52);
 	
-	public SimulatorSerializer(Simulator sim, int port, String address){
+	public SimulatorSerializer(AutoDriverOnlySimulator sim, int port, String address){
 		this.sim = sim;
 		//this.connection = new UDPSocket(2501, "192.168.1.141");
+		initialised = false;
 		this.connection = new UDPSocket(port, address, false);
+	}
+	
+	public SimulatorSerializer(AutoDriverOnlySimulator sim, int port, String address, ODPair path){
+		this.sim = sim;
+		//this.connection = new UDPSocket(2501, "192.168.1.141");
+		initialised = false;
+		this.connection = new UDPSocket(port, address, false);
+		this.path = path;
 	}
 	
 	public Simulator getSim(){
 		return sim;
 	}
-	public void setSim(Simulator sim){
+	public void setSim(AutoDriverOnlySimulator sim){
 		this.sim = sim;
 	}
 	public ArrayList<ProxyVehicle> getProxyVehicles(){
 		return playerVehicles;
 	}
+	public VehicleSimView getPlayerVehicle(){
+		return playerVehicle;
+	}
+	public boolean isInitialised(){
+		return this.initialised;
+	}
 	public boolean setVinToVehicles(double timeStep, Map<Integer,VehicleSimView> vinToVehicles){
 		this.vinToVehicles = vinToVehicles;
-		if(this.generateProxyVehicle(timeStep) != null){
+		
+		if(recieveEnable && this.generateProxyVehicle(timeStep) != null){
+			initialised = true;
 			return true;
 		}
 		return false;
 	}
+	
+	public boolean setVinToVehicles(double timeStep, Map<Integer,VehicleSimView> vinToVehicles, ODPair path){
+		this.vinToVehicles = vinToVehicles;
+		
+		if(recieveEnable && this.generateProxyVehicle(timeStep) != null){
+			initialised = true;
+			return true;
+		} else if(!recieveEnable){
+			this.playerVehicle = generatePlayerVehicle(this.sim, path);
+			initialised = true;
+			return true;
+		}
+		return false;
+	}
+
 	public void send(double timeStep){
 		connection.send(serialize(timeStep));
 	}
@@ -449,6 +518,11 @@ public class SimulatorSerializer {
 		}
 		return laneReturn;
 	}
+	
+	public ODPair getPath(){
+		return this.path;
+	}
+	
 	private double rollOverBearing(double bearing){
 		while(bearing < 0){
 			bearing = bearing + 2 * Math.PI;
@@ -458,5 +532,145 @@ public class SimulatorSerializer {
 		}
 		return bearing;
 	}
+	/*
+	 * 
+	 * 
+	 * 
+	 * to test
+	 */
+	private VehicleSimView generatePlayerVehicle(Simulator sim, ODPair path) {
+		boolean sucessful = false;
+		ArrayList<SpawnPoint> candidateSpawns = new ArrayList<SpawnPoint>();
+		ArrayList<Road> candidateDestinations = new ArrayList<Road>();
+		SpawnPoint initSpawnPoint = null;
+		Road destRoad;
+		SpawnSpec spawnSpec;
+		
+		VehicleSimView vehicle = null;
+		
+		double startBearing = 0;
+		double endBearing = 0;
+		//set bearings, hard coded
+		if(path.equals(ODPair.NORTH_EAST)||path.equals(ODPair.NORTH_WEST)||path.equals(ODPair.NORTH_SOUTH)){
+			startBearing = Math.PI;
+		} else if(path.equals(ODPair.SOUTH_EAST)||path.equals(ODPair.SOUTH_WEST)||path.equals(ODPair.SOUTH_NORTH)){
+			startBearing = 0;
+		} else if(path.equals(ODPair.EAST_WEST)||path.equals(ODPair.EAST_SOUTH)||path.equals(ODPair.EAST_NORTH)){
+			startBearing = Math.PI / 2;
+		} else if(path.equals(ODPair.WEST_EAST)||path.equals(ODPair.WEST_SOUTH)||path.equals(ODPair.WEST_NORTH)){
+			startBearing = (3 * Math.PI ) / 2;
+		}
+		
+		if(path.equals(ODPair.SOUTH_NORTH)||path.equals(ODPair.EAST_NORTH)||path.equals(ODPair.WEST_NORTH)){
+			endBearing = 0;
+		} else if(path.equals(ODPair.NORTH_SOUTH)||path.equals(ODPair.EAST_SOUTH)||path.equals(ODPair.WEST_SOUTH)){
+			endBearing = Math.PI;
+		} else if(path.equals(ODPair.EAST_WEST)||path.equals(ODPair.SOUTH_WEST)||path.equals(ODPair.NORTH_WEST)){
+			endBearing = (3 * Math.PI ) / 2;
+		} else if(path.equals(ODPair.NORTH_EAST)||path.equals(ODPair.SOUTH_EAST)||path.equals(ODPair.WEST_EAST)){
+			endBearing = Math.PI / 2;
+		}
+		
+		for(SpawnPoint spawnPoint : sim.getMap().getSpawnPoints()){
+			if(spawnPoint.getHeading() == startBearing){
+				candidateSpawns.add(spawnPoint);
+			}
+		}
+		for(Road road :sim.getMap().getDestinationRoads()){
+			if(road.getIndexLane().getInitialHeading() == endBearing){
+				candidateDestinations.add(road);
+			}
+		}
+		destRoad = candidateDestinations.get(0);
+		//return null if no results
+		if(candidateSpawns.isEmpty() || candidateDestinations.isEmpty()){
+			return null;
+		}
+		//decide if lane will cross traffic paths
+		for(SpawnPoint spawnPoint: candidateSpawns){
+			if(willNotCrossLanes(spawnPoint.getLane(),destRoad)){
+				initSpawnPoint = spawnPoint;
+				break;
+			}
+		}
+		//check if spawnPoint is valid
+		if(initSpawnPoint == null){
+			return null;
+		}
+		//create spawn spec
+		spawnSpec = new SpawnSpec(sim.getSimulationTime(), VehicleSpecDatabase.getVehicleSpecByName("SEDAN"), destRoad);
+		if(this.sim.canSpawnVehicle(initSpawnPoint)){
+			vehicle = makeVehicle(initSpawnPoint, spawnSpec);
+			if(vehicle != null){
+				VinRegistry.registerVehicle(vehicle); // Get vehicle a VIN number
+				vinToVehicles.put(vehicle.getVIN(), vehicle);
+			}
+		}
+		
+		return vehicle;
+	}
+		
+	private boolean willNotCrossLanes(Lane currentLane, Road dest) {
+		//allow straight paths
+		  if(pathIsStraight(currentLane.getInitialHeading(), dest.getIndexLane().getInitialHeading())){
+			  return true;
+		  }
+		  //sim is left hand drive
+		  //if there is a left lane, exclude right hand turns
+		  //else exclude left hand turns
+		  if(currentLane.hasLeftNeighbor()){
+			  if(isLeftHandTurn(currentLane.getInitialHeading(), dest.getIndexLane().getInitialHeading())){
+				  return false;
+			  } else {
+				  return true;
+			  }
+		  } else {
+			  if(isLeftHandTurn(currentLane.getInitialHeading(), dest.getIndexLane().getInitialHeading())){
+				  return true;
+			  }else{
+				  return false;
+			  }
+		  }
+	}
 	//for shapes of misc size use java.awt.polygon
+	/**
+	   * @author Alexander Humphry
+	   * 
+	   * returns true if a left hand turn is required to travel from the initial heading to the final heading
+	   * @param initHeading
+	   * @param finalHeading
+	   * @return
+	   */
+	private boolean isLeftHandTurn(double initHeading, double finalHeading) {
+		if(initHeading < Math.PI){
+			  //if heading is in first 180 degrees
+			  if(initHeading < finalHeading && finalHeading < initHeading + Math.PI){
+				  return false;
+			  }
+			  return true;
+		  } else {
+			  if(initHeading - Math.PI < finalHeading && finalHeading < initHeading){
+				  return true;
+			  }
+			  return false;
+		  }
+	}
+	/**
+	   * @author Alexander Humphry
+	   * 
+	   * returns true if the path requires a turn of no more than PI * 0.1 radians
+	   * @param initHeading
+	   * @param finalHeading
+	   * @return
+	   */
+	private boolean pathIsStraight(double initHeading, double finalHeading) {
+		if(Math.abs(initHeading - finalHeading) < Math.PI * 0.1){
+			  return true;
+		}
+		if(Math.abs(initHeading + 2*Math.PI - finalHeading) < Math.PI * 0.1 || 
+				  Math.abs(initHeading - 2*Math.PI - finalHeading) < Math.PI * 0.1){
+			  return true;
+		}
+		return false;
+	}
 }
