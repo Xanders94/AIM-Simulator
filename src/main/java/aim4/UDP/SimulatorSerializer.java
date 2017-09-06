@@ -8,10 +8,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.awt.Color;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 
+import aim4.config.Debug;
 import aim4.driver.AutoDriver;
 import aim4.driver.ProxyDriver;
 import aim4.im.IntersectionManager;
@@ -566,9 +568,9 @@ public class SimulatorSerializer {
 		} else if(path.equals(ODPair.NORTH_SOUTH)||path.equals(ODPair.EAST_SOUTH)||path.equals(ODPair.WEST_SOUTH)){
 			endBearing = Math.PI;
 		} else if(path.equals(ODPair.EAST_WEST)||path.equals(ODPair.SOUTH_WEST)||path.equals(ODPair.NORTH_WEST)){
-			endBearing = (3 * Math.PI ) / 2;
-		} else if(path.equals(ODPair.NORTH_EAST)||path.equals(ODPair.SOUTH_EAST)||path.equals(ODPair.WEST_EAST)){
 			endBearing = Math.PI / 2;
+		} else if(path.equals(ODPair.NORTH_EAST)||path.equals(ODPair.SOUTH_EAST)||path.equals(ODPair.WEST_EAST)){
+			endBearing = (3 * Math.PI ) / 2;
 		}
 		
 		for(SpawnPoint spawnPoint : sim.getMap().getSpawnPoints()){
@@ -600,13 +602,18 @@ public class SimulatorSerializer {
 		//create spawn spec
 		spawnSpec = new SpawnSpec(sim.getSimulationTime(), VehicleSpecDatabase.getVehicleSpecByName("SEDAN"), destRoad);
 		if(this.sim.canSpawnVehicle(initSpawnPoint)){
-			vehicle = makeVehicle(initSpawnPoint, spawnSpec);
+			vehicle = this.sim.makeVehicle(initSpawnPoint, spawnSpec);
 			if(vehicle != null){
 				VinRegistry.registerVehicle(vehicle); // Get vehicle a VIN number
 				vinToVehicles.put(vehicle.getVIN(), vehicle);
+			} else {
+				return null;
+			}
+			Debug.setVehicleColor(vehicle.getVIN(), new Color(204,0,204));
+			if(destRoad.getDual().getLanes().contains(initSpawnPoint.getLane())){
+				return null;
 			}
 		}
-		
 		return vehicle;
 	}
 		
