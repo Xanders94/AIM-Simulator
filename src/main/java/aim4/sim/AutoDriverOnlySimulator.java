@@ -157,21 +157,26 @@ public class AutoDriverOnlySimulator implements Simulator {
     
     //send UDP Alex Humphry
     //simSerialiser = new SimulatorSerialiser(this, 2500, "192.168.62.131");//linux machine
-    simSerializer = new SimulatorSerializer(this, 2500, "192.168.0.1");//direct sim connect
+    
+    //simSerializer = new SimulatorSerializer(this, 2500, "192.168.0.1");//direct sim connect
+    
     //simSerializer = new SimulatorSerializer(this, 2501, "192.168.0.2");//indirect sim connect
     ////simSerializer = new SimulatorSerializer(this, 2501, "127.0.0.1");//local loopback sim connect
     //simSerialiser = new SimulatorSerialiser(this, 2500, "192.168.1.135");
     //pass reference of vinToVehicles list to serialiser for proxy vehicle addition
     //simSerialiser.setVinToVehicles(timeStep,vinToVehicles);
     
+    
+    //simSerializer = new SimulatorSerializer(this,2502, "192.168.0.2");
+    
     simCreatorConnections = new ArrayList<SimulatorSerializer>();
     
     //add simulator connections
     simCreatorConnections.add(new SimulatorSerializer(this,2502, "192.168.0.2",SimulatorSerializer.ODPair.NORTH_SOUTH)); //sim1
-    simCreatorConnections.add(new SimulatorSerializer(this,2504, "192.168.0.3",SimulatorSerializer.ODPair.EAST_WEST)); //sim2
-    simCreatorConnections.add(new SimulatorSerializer(this,2506, "192.168.0.4",SimulatorSerializer.ODPair.SOUTH_NORTH)); //sim3
-    simCreatorConnections.add(new SimulatorSerializer(this,2508, "192.168.0.5",SimulatorSerializer.ODPair.WEST_NORTH)); //sim4
-    simCreatorConnections.add(new SimulatorSerializer(this,2510, "192.168.0.6",SimulatorSerializer.ODPair.NORTH_EAST)); //sim5
+    simCreatorConnections.add(new SimulatorSerializer(this,2500, "192.168.0.3",SimulatorSerializer.ODPair.EAST_WEST)); //sim2
+    simCreatorConnections.add(new SimulatorSerializer(this,2504, "192.168.0.4",SimulatorSerializer.ODPair.SOUTH_NORTH)); //sim3
+    simCreatorConnections.add(new SimulatorSerializer(this,2506, "192.168.0.5",SimulatorSerializer.ODPair.WEST_NORTH)); //sim4
+    simCreatorConnections.add(new SimulatorSerializer(this,2508, "192.168.0.6",SimulatorSerializer.ODPair.NORTH_EAST)); //sim5
     
     hasRun = false;
     
@@ -188,16 +193,35 @@ public class AutoDriverOnlySimulator implements Simulator {
    */
   @Override
   public synchronized AutoDriverOnlySimStepResult step(double timeStep) {
-	for(SimulatorSerializer simConnect : simCreatorConnections){
+	/*for(SimulatorSerializer simConnect : simCreatorConnections){
 		if(!simConnect.isInitialised() && this.getSimulationTime() > 50.0){
 			simConnect.setVinToVehicles(timeStep, vinToVehicles, simConnect.getPath());
 		}
-	}
-	if(!this.hasRun && !vinToVehicles.isEmpty()){
+	}*/
+	/*if(!this.hasRun && !vinToVehicles.isEmpty()){
 		//old code
 		this.hasRun = simSerializer.setVinToVehicles(timeStep,vinToVehicles);
 		this.hasRun = true;
+	}*/
+	
+	for(SimulatorSerializer simConnect : simCreatorConnections){
+		if(!simConnect.isInitialisedNoVehicles() && !vinToVehicles.isEmpty()) {
+			simConnect.setVinToVehicles(timeStep, vinToVehicles);
+			simConnect.setInitialisedNoVehicles(true);
+		} else if(!simConnect.isInitialised() && this.getSimulationTime() > 50.0) {
+			simConnect.setVinToVehicles(timeStep, vinToVehicles, simConnect.getPath());
+		}
 	}
+	//old code
+	/*if(!simCreatorConnections.get(0).isInitialisedNoVehicles() && !vinToVehicles.isEmpty()) {
+		simCreatorConnections.get(0).setVinToVehicles(timeStep, vinToVehicles);
+		simCreatorConnections.get(0).setInitialisedNoVehicles(true);
+	}*/
+	/*if(!simSerializer.isInitialisedNoVehicles() && !vinToVehicles.isEmpty()) {
+		simSerializer.setVinToVehicles(timeStep, vinToVehicles);
+		simSerializer.setInitialisedNoVehicles(true);
+	}*/
+	
     if (Debug.PRINT_SIMULATOR_STAGE) {
       System.err.printf("--------------------------------------\n");
       System.err.printf("------SIM:spawnVehicles---------------\n");
@@ -235,7 +259,11 @@ public class AutoDriverOnlySimulator implements Simulator {
     
     //Alex Humphry
     //send data after time step via UDP
-    simSerializer.send(timeStep);
+    ////simSerializer.send(timeStep);
+    //simCreatorConnections.get(0).send(timeStep);
+    for(SimulatorSerializer simConnect : simCreatorConnections){
+			simConnect.send(timeStep);
+	}
     //not pointed in correct direction
     //System.out.println(simSerialiser.recieve().getText());
     
@@ -518,11 +546,11 @@ public class AutoDriverOnlySimulator implements Simulator {
     // Now add each of the Vehicles, but make sure to exclude those that are
     // already inside (partially or entirely) the intersection
     for(VehicleSimView vehicle : vinToVehicles.values()) {
-    	if(simSerializer.getProxyVehicles().contains(vehicle)){
+    	/*if(simSerializer.getProxyVehicles().contains(vehicle)){
     		Point2D test = vehicle.gaugePosition();
     		test.getX();
     		test.getY();
-    	}
+    	}*/
       // Find out what lanes it is in.
       Set<Lane> lanes = vehicle.getDriver().getCurrentlyOccupiedLanes();
       for(Lane lane : lanes) {

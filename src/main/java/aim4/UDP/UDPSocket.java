@@ -72,9 +72,9 @@ public class UDPSocket {
 		try {
 			socket.send(packet);
 			//System.out.println(outgoing);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.print(e.getMessage());
 		}
 	}
 	public String recieve(){

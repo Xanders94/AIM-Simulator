@@ -33,6 +33,7 @@ import aim4.vehicle.VehicleSpecDatabase;
 import aim4.vehicle.VinRegistry;
 import aim4.vehicle.BasicVehicle;
 import aim4.vehicle.ProxyVehicle;
+import aim4.vehicle.ProxyVehicleSimView;
 import aim4.vehicle.AutoVehicleSimView;
 import aim4.vehicle.BasicAutoVehicle;
 
@@ -79,6 +80,7 @@ public class SimulatorSerializer {
 	
 	boolean recieveEnable = false;
 	boolean initialised;
+	boolean initialisedNoVehicle;
 	ODPair path = null;
 	
 	Random rand = new Random();
@@ -94,14 +96,18 @@ public class SimulatorSerializer {
 		this.sim = sim;
 		//this.connection = new UDPSocket(2501, "192.168.1.141");
 		initialised = false;
+		initialisedNoVehicle = false;
 		this.connection = new UDPSocket(port, address, false);
+		setPlayerVehicle(null);
 	}
 	
 	public SimulatorSerializer(AutoDriverOnlySimulator sim, int port, String address, ODPair path){
 		this.sim = sim;
 		//this.connection = new UDPSocket(2501, "192.168.1.141");
 		initialised = false;
+		initialisedNoVehicle = false;
 		this.connection = new UDPSocket(port, address, false);
+		setPlayerVehicle(null);
 		this.path = path;
 	}
 	
@@ -111,11 +117,22 @@ public class SimulatorSerializer {
 	public void setSim(AutoDriverOnlySimulator sim){
 		this.sim = sim;
 	}
+	
+	public boolean isInitialisedNoVehicles() {
+		return initialisedNoVehicle;
+	}
+	public void setInitialisedNoVehicles(boolean noVehicles) {
+		initialisedNoVehicle = noVehicles;
+	}
 	public ArrayList<ProxyVehicle> getProxyVehicles(){
 		return playerVehicles;
 	}
 	public VehicleSimView getPlayerVehicle(){
 		return playerVehicle;
+	}
+	public void setPlayerVehicle(VehicleSimView playerVehicle) {
+
+		this.playerVehicle = playerVehicle;
 	}
 	public boolean isInitialised(){
 		return this.initialised;
@@ -136,9 +153,13 @@ public class SimulatorSerializer {
 		if(recieveEnable && this.generateProxyVehicle(timeStep) != null){
 			initialised = true;
 			return true;
-		} else if(!recieveEnable){
-			this.playerVehicle = generatePlayerVehicle(this.sim, path);
+		} else if(!recieveEnable && !initialised){
 			initialised = true;
+			//this.playerVehicle = generatePlayerVehicle(this.sim, path);
+			setPlayerVehicle(generatePlayerVehicle(this.sim, path));
+			if(getPlayerVehicle() == null) {
+				return false;
+			}
 			return true;
 		}
 		return false;
@@ -230,7 +251,10 @@ public class SimulatorSerializer {
 			Point2D proxyPosOffset = getProximityOffset(0,500.0);
 			//create list of vehicles to send to simcreator
 			orderMapping(getClosestVehiclesToPoint(vehicles, 1300.0, proxyPosOffset.getX(), proxyPosOffset.getY()));
-		} else {
+		}/* else if(false && playerVehicle != null) {
+			Point2D proxyPosOffset = getProximityOffset(playerVehicle,500.0);
+			orderMapping(getClosestVehiclesToPoint(vehicles, 1300.0, proxyPosOffset.getX(), proxyPosOffset.getY()));
+		} */else {
 			orderMapping(getClosestVehiclesToPoint(vehicles, 1000.0, 157.5, 157.5));
 		}
 		//check for missing vehicles from prev time around
@@ -290,7 +314,60 @@ public class SimulatorSerializer {
 					+ "#";
 			vin++;
 		}
-		System.out.println(outgoing + "End");
+		//add playerVehicle
+		
+		if(getPlayerVehicle() != null) {
+			
+			BasicVehicle bVehicle = (BasicVehicle) getPlayerVehicle();
+			//format, VIN#-#positionX#-#positionY#-#heading#-#velocity#-#acceleration#-#steeringAngle#-#dataTransmitted#-#dataReceived
+			//#-#length#-#width#-#bufferFactor#-#timeBufferFactor#--#
+			
+			/*process coordinates*/
+			/*-160 comes from a specific scenario (4 lanes 4 way intersection)*/
+			xCoord = bVehicle.getCenterPoint().getX() - 157.5;
+			yCoord = bVehicle.getCenterPoint().getY() - 157.5;
+			
+			/*process heading (yaw) parameter*/
+			if(bVehicle.gaugeHeading() < 0.000000000001){
+				heading = 0;
+			} else {
+				heading = bVehicle.gaugeHeading();
+			}
+			double steering;
+			try{
+				steering = bVehicle.getSteeringAngle();
+			} catch (Exception e){
+				steering = 0.0;
+			}
+			//convert local velocity to global x and y velocities
+			double velocityX = 0.0;
+			double velocityY = 0.0;
+			velocityY = bVehicle.gaugeVelocity() * Math.sin(heading);
+			velocityX = bVehicle.gaugeVelocity() * Math.cos(heading);
+			//assuming 17in wheel calc tire roll over time step
+			double length = bVehicle.gaugeVelocity() * timeStep;
+			double angle = (length * 360) / (4 * Math.PI * 0.2159);
+			tireRollAngle = Math.toRadians(angle);
+			//limit outgoing numbers to 3dp, assume number no larger than 10,000.9999
+			//start# = 6, end = 3, vehicle = 53 * (7 + 11 * 7), proxy# = 6, total max packet = 4467 bytes, packet = 
+			outgoing += 52
+					//+ "#" + bVehicle.getVIN() + "<=="
+					+ "#" + (float) Math.floor(xCoord * 10000)/10000
+					+ "#" + (float) Math.floor(yCoord * 10000)/10000
+					+ "#" + (float) Math.floor(heading * 10000)/10000
+					+ "#" + (float) Math.floor(velocityX * 10000)/10000
+					+ "#" + (float) Math.floor(velocityY * 10000)/10000
+					+ "#" + (float) Math.floor(steering * 10000)/10000
+					+ "#" + (float) Math.floor(tireRollAngle * 10000)/10000 //rotation angle of tires in radians
+					+ "#";
+			//vin++;
+		}
+		
+		/*if(initialised && playerVehicle != null) {
+			Debug.setVehicleColor(vehicle.getVIN(), new Color(204,0,204));
+		}*/
+		
+		//System.out.println(outgoing + "End");
 		//System.out.println("number of vans in active is: " + vanNumber);
 		//add information on this simulator's proxy vehicle if available
 		
@@ -324,9 +401,22 @@ public class SimulatorSerializer {
 
 	private Point2D getProximityOffset(int playerVehicle, double offsetDist) {
 		//retrieve proxy vehicle
-		ProxyVehicle subject = null;
+		ProxyVehicleSimView subject = null;
 		try{
 			subject = playerVehicles.get(playerVehicle);
+		} catch (Exception e){
+			return new Point2D.Double(this.sim.getMap().getDimensions().getBounds2D().getCenterX(),this.sim.getMap().getDimensions().getBounds2D().getCenterY()) ;
+		}
+		Point2D subjectPoint= subject.getCenterPoint();
+		subjectPoint.setLocation(subjectPoint.getX() + Math.sin(subject.gaugeHeading())*offsetDist, subjectPoint.getY() + Math.cos(subject.gaugeHeading())*offsetDist);
+		return subjectPoint;
+	}
+	
+	private Point2D getProximityOffset(VehicleSimView vehicle, double offsetDist) {
+		//retrieve proxy vehicle
+		VehicleSimView subject = null;
+		try{
+			subject = vehicle;
 		} catch (Exception e){
 			return new Point2D.Double(this.sim.getMap().getDimensions().getBounds2D().getCenterX(),this.sim.getMap().getDimensions().getBounds2D().getCenterY()) ;
 		}
@@ -351,6 +441,10 @@ public class SimulatorSerializer {
 		}
 		//second: add new mappings for new vehicles in vehicle list
 		for(VehicleSimView vehicle : vehicles){
+			//if vehicle is player vehicle, try next vehicle
+			if(getPlayerVehicle() != null && vehicle.getVIN() == getPlayerVehicle().getVIN()) {
+				continue;
+			}
 			//if vehicle isn't in the mapping, add 
 			if(!vehicleMapping.containsValue(vehicle)){
 				for(int i = 0; i < vehicleMapping.size() || i < 52; i++){
@@ -613,6 +707,11 @@ public class SimulatorSerializer {
 			if(destRoad.getDual().getLanes().contains(initSpawnPoint.getLane())){
 				return null;
 			}
+			System.out.println("vehicle vin = " + vehicle.getVIN());
+			//Successfully generated the player vehicle
+			setPlayerVehicle(vehicle);
+		} else {
+			this.initialised = false;
 		}
 		return vehicle;
 	}
