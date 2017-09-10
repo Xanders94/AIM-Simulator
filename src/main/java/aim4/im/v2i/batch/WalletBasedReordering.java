@@ -10,11 +10,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableSet;
+import java.util.PriorityQueue;
 
 import aim4.config.Debug;
 import aim4.im.TrackModel;
 import aim4.im.v2i.RequestHandler.BatchModeRequestHandler.IndexedProposal;
 import aim4.map.Road;
+import aim4.map.SpawnPoint;
 import aim4.msg.v2i.Request.Proposal;
 import aim4.vehicle.VehicleSimView;
 
@@ -63,6 +65,8 @@ public class WalletBasedReordering implements ReorderingStrategy {
 	   * The time period between the processing times.
 	   */
 	  private double processingInterval = DEFAULT_PROCESSING_INTERVAL;
+	  
+	  private BidLaneTrack bidLaneTracker;
 
 
 	  /////////////////////////////////
@@ -76,6 +80,7 @@ public class WalletBasedReordering implements ReorderingStrategy {
 	   */
 	  public WalletBasedReordering(double processingInterval) {
 	    this.processingInterval = processingInterval;
+	    bidLaneTracker = new BidLaneTrack();
 	  }
 
 	  /////////////////////////////////
@@ -103,13 +108,14 @@ public class WalletBasedReordering implements ReorderingStrategy {
 	  public List<IndexedProposal> getBatch(double currentTime,
 	                                        NavigableSet<IndexedProposal> queue,
 	                                        TrackModel trackModel) {
-
+		bidLaneTracker.refreshTraffic(queue, currentTime);
 	    List<IndexedProposal> proposals1 = selectProposals(currentTime, queue);
 	    List<IndexedProposal> proposals2 = reorderProposals(proposals1);
+	    List<IndexedProposal> proposals3 = bidLaneTracker.reorderProposals(proposals2, currentTime);
 
 	    nextProcessingTime = currentTime + processingInterval;
 	    nextProposalDeadline = nextProcessingTime + COMP_COMM_DELAY;
-	    return proposals2;
+	    return proposals3;
 	  }
 
 	  /**
@@ -225,22 +231,111 @@ public class WalletBasedReordering implements ReorderingStrategy {
       };
 
 	}
-
-
-
-
-
-
-
-class LaneOrder {
-	LinkedList<QueueVehicle> laneVehicles;
-	double laneBid;
+/**
+ * 
+ * @author Alexander
+ * keeps track of the whole set of vehicles ordered by bid and time spent in queue
+ */
+class BidLaneTrack{
 	
-	LaneOrder(){
-		laneVehicles = new LinkedList<QueueVehicle>();
-		laneBid = 0;
+	PriorityQueue<LaneOrder> laneList;
+	
+	
+	public BidLaneTrack(){
+		Comparator<LaneOrder> laneComparator = new Comparator<LaneOrder>(){
+
+			@Override
+			//gives the lane with the highest bid, the lowest score
+			public int compare(LaneOrder lane1, LaneOrder lane2) {
+				
+				return (int)((lane2.getLaneBid() - lane1.getLaneBid())*100);
+			}
+			
+		};
+		laneList = new PriorityQueue<LaneOrder>(8,laneComparator);
+		
+		for(SpawnPoint sp : Debug.currentMap.getSpawnPoints()){
+			laneList.add(new LaneOrder(sp.getLane().getId()));
+		}
 	}
 	
+	/**
+	 * updates bids for each lane in this object
+	 * @param currentTime
+	 */
+	public void updateAllLaneBids(double currentTime){
+		for(LaneOrder lane : laneList){
+			lane.getLaneBidU(currentTime);
+		}
+	}
+	/**
+	 * Resets all existing vehicles to active, adds any new vehicles (set to active) and deletes all non active vehicles
+	 * @param traffic
+	 */
+	public void refreshTraffic(NavigableSet<IndexedProposal> traffic, double currentTime){
+		for(IndexedProposal proposal : traffic){
+			for(LaneOrder lane : laneList){
+				if(lane.getID() == proposal.getProposal().getArrivalLaneID()){
+					lane.addVehicle(proposal, currentTime);
+					break;
+				}
+			}
+		}
+		for(LaneOrder lane : laneList){
+			lane.removeInactiveVehicles(currentTime);
+		}
+	}
+	/**
+	 * set all vehicles associated with this object to inactive
+	 * unless set to active, refresh traffic will remove the vehicle
+	 */
+	public void setAllToInactive(){
+		for(LaneOrder lane : laneList){
+			lane.setInactive();
+		}
+	}
+	/**
+	 * Takes the current set of selected proposals and orders them based on which lane has the most bidding power.
+	 * @param proposals2
+	 * @return
+	 */
+	public ArrayList<IndexedProposal> reorderProposals(List<IndexedProposal> proposals2, double currentTime){
+		ArrayList<IndexedProposal> tempStorage = new ArrayList<IndexedProposal>(proposals2);
+		ArrayList<IndexedProposal> result = new ArrayList<IndexedProposal>();
+		
+		updateAllLaneBids(currentTime);
+		
+		for(LaneOrder lane : laneList){
+			for(IndexedProposal proposal : tempStorage){
+				if(proposal.getProposal().getArrivalLaneID() == lane.getID()){
+					result.add(proposal);
+				}
+			}
+		}
+		return result;
+	}
+}
+
+/**
+ * 
+ * @author Alexander
+ * groups vehicles by lane and keeps effective bids up to date
+ */
+class LaneOrder {
+	private LinkedList<QueueVehicle> laneVehicles;
+	private double laneBid;
+	private int laneId;
+	
+	LaneOrder(int laneId){
+		laneVehicles = new LinkedList<QueueVehicle>();
+		laneBid = 0;
+		this.laneId = laneId;
+	}
+
+	public int getID() {
+		return laneId;
+	}
+
 	public ArrayList<QueueVehicle> getLaneVehicles(){
 		return new ArrayList<QueueVehicle>(this.laneVehicles);
 	}
@@ -263,27 +358,33 @@ class LaneOrder {
 		return bidSubTotal;
 	}
 	
-	public void addVehicle(QueueVehicle vehicle, double currentTime){
-		laneBid += vehicle.effectiveBid(currentTime);
-		laneVehicles.addFirst(vehicle);
-	}
-	
-	public void addVehicle(VehicleSimView vehicle, double currentTime){
-		QueueVehicle queueVehicle = new QueueVehicle(vehicle,currentTime);
+
+	public void addVehicle(IndexedProposal proposal, double currentTime){
+		for(QueueVehicle vehicle :laneVehicles){
+			if(vehicle.getVin() == proposal.getRequest().getVin()){
+				vehicle.setIsActive(true);
+				return;
+			}
+		}
+		QueueVehicle queueVehicle = new QueueVehicle(proposal,currentTime);
 		laneBid += queueVehicle.getBid();
 		laneVehicles.addFirst(queueVehicle);
+		
 	}
-	public void removeVehicle(int vehicleVIN, double currentTime){
+	public void removeInactiveVehicles(double currentTime){
 		
-		LinkedList<QueueVehicle> tempList = new LinkedList<QueueVehicle>(laneVehicles);
-		
+		ArrayList<QueueVehicle> tempList = new ArrayList<QueueVehicle>();
 		for(QueueVehicle vehicle : tempList){
-			if(vehicle.getVehicle().getVIN() == vehicleVIN){
-				//remove the targetVehicle
+			if(!vehicle.isActive()){
 				laneVehicles.remove(vehicle);
-				//update the total bid
 				getLaneBidU(currentTime);
 			}
+		}
+	}
+	
+	public void setInactive(){
+		for(QueueVehicle vehicle : laneVehicles){
+			vehicle.setIsActive(false);
 		}
 	}
 }
@@ -294,18 +395,30 @@ class LaneOrder {
  */
 class QueueVehicle {
 	
-	VehicleSimView vehicle;
-	double bid;
-	double timeEntered;
+	private int vin;
+	private IndexedProposal proposal;
+	private double bid;
+	private double timeEntered;
+	private boolean isActive;
 	
-	QueueVehicle(VehicleSimView vehicle, double timeEntered){
-		this.vehicle = vehicle;
-		bid = vehicle.getDriver().getWallet().getCurrentBid();
+	QueueVehicle(int vin, IndexedProposal proposal, double timeEntered){
+		this.vin = vin;
+		this.proposal = proposal;
+		bid = proposal.getProposal().getBid();
 		this.timeEntered = timeEntered;
+		this.isActive = true;
 	}
 	
-	public VehicleSimView getVehicle(){
-		return vehicle;
+	QueueVehicle(IndexedProposal proposal, double timeEntered){
+		this.vin = proposal.getRequest().getVin();
+		this.proposal = proposal;
+		bid = proposal.getProposal().getBid();
+		this.timeEntered = timeEntered;
+		this.isActive = true;
+	}
+	
+	public int getVin(){
+		return vin;
 	}
 	public double getBid(){
 		return bid;
@@ -314,10 +427,27 @@ class QueueVehicle {
 		return timeEntered;
 	}
 	public double getTimeCost(double currentTime){
-		return Math.abs(currentTime - timeEntered);
+		return (Math.abs(currentTime - timeEntered) / 100);
 	}
 	public double effectiveBid(double currentTime){
 		return getTimeEntered() + getTimeCost(currentTime);
+	}
+	public IndexedProposal getIProposal(){
+		return proposal;
+	}
+	public boolean setIProposal(IndexedProposal proposal){
+		if(this.vin == proposal.getRequest().getVin()){
+			this.proposal = proposal;
+			return true;
+		} else {
+			return false;
+		}
+	}
+	public boolean isActive(){
+		return isActive;
+	}
+	public void setIsActive(boolean isActive){
+		this.isActive = isActive;
 	}
 }
 
