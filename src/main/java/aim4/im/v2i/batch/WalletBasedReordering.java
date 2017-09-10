@@ -16,6 +16,7 @@ import aim4.im.TrackModel;
 import aim4.im.v2i.RequestHandler.BatchModeRequestHandler.IndexedProposal;
 import aim4.map.Road;
 import aim4.msg.v2i.Request.Proposal;
+import aim4.vehicle.VehicleSimView;
 
 public class WalletBasedReordering implements ReorderingStrategy {
 
@@ -224,4 +225,99 @@ public class WalletBasedReordering implements ReorderingStrategy {
       };
 
 	}
+
+
+
+
+
+
+
+class LaneOrder {
+	LinkedList<QueueVehicle> laneVehicles;
+	double laneBid;
+	
+	LaneOrder(){
+		laneVehicles = new LinkedList<QueueVehicle>();
+		laneBid = 0;
+	}
+	
+	public ArrayList<QueueVehicle> getLaneVehicles(){
+		return new ArrayList<QueueVehicle>(this.laneVehicles);
+	}
+	
+	public double getLaneBid(){
+		return laneBid;
+	}
+	
+	/**
+	 * updates the current bid for the lane and returns the result
+	 * @param currentTime
+	 * @return current Lane Bids
+	 */
+	public double getLaneBidU(double currentTime){
+		double bidSubTotal = 0;
+		for(QueueVehicle vehicle : laneVehicles){
+			bidSubTotal += vehicle.effectiveBid(currentTime);
+		}
+		this.laneBid = bidSubTotal;
+		return bidSubTotal;
+	}
+	
+	public void addVehicle(QueueVehicle vehicle, double currentTime){
+		laneBid += vehicle.effectiveBid(currentTime);
+		laneVehicles.addFirst(vehicle);
+	}
+	
+	public void addVehicle(VehicleSimView vehicle, double currentTime){
+		QueueVehicle queueVehicle = new QueueVehicle(vehicle,currentTime);
+		laneBid += queueVehicle.getBid();
+		laneVehicles.addFirst(queueVehicle);
+	}
+	public void removeVehicle(int vehicleVIN, double currentTime){
+		
+		LinkedList<QueueVehicle> tempList = new LinkedList<QueueVehicle>(laneVehicles);
+		
+		for(QueueVehicle vehicle : tempList){
+			if(vehicle.getVehicle().getVIN() == vehicleVIN){
+				//remove the targetVehicle
+				laneVehicles.remove(vehicle);
+				//update the total bid
+				getLaneBidU(currentTime);
+			}
+		}
+	}
+}
+/**
+ * 
+ * @author Alexander
+ * stores the vehicle's bid and time since entry of queue
+ */
+class QueueVehicle {
+	
+	VehicleSimView vehicle;
+	double bid;
+	double timeEntered;
+	
+	QueueVehicle(VehicleSimView vehicle, double timeEntered){
+		this.vehicle = vehicle;
+		bid = vehicle.getDriver().getWallet().getCurrentBid();
+		this.timeEntered = timeEntered;
+	}
+	
+	public VehicleSimView getVehicle(){
+		return vehicle;
+	}
+	public double getBid(){
+		return bid;
+	}
+	public double getTimeEntered(){
+		return timeEntered;
+	}
+	public double getTimeCost(double currentTime){
+		return Math.abs(currentTime - timeEntered);
+	}
+	public double effectiveBid(double currentTime){
+		return getTimeEntered() + getTimeCost(currentTime);
+	}
+}
 
