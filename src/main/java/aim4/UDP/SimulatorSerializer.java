@@ -324,6 +324,7 @@ public class SimulatorSerializer {
 			
 			/*process coordinates*/
 			/*-160 comes from a specific scenario (4 lanes 4 way intersection)*/
+			
 			xCoord = bVehicle.getCenterPoint().getX() - 157.5;
 			yCoord = bVehicle.getCenterPoint().getY() - 157.5;
 			
@@ -333,6 +334,10 @@ public class SimulatorSerializer {
 			} else {
 				heading = bVehicle.gaugeHeading();
 			}
+			/*if(false && this.connection.getAddress().equals("192.168.0.5")) {
+				Debug.setVehicleColor(bVehicle.getVIN(), Color.MAGENTA);
+				System.out.println("sim vehicle heading: " + heading);
+			}*/
 			double steering;
 			try{
 				steering = bVehicle.getSteeringAngle();
