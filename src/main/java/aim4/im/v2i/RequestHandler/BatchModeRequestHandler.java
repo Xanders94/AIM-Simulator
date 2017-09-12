@@ -44,6 +44,7 @@ import java.util.TreeSet;
 
 import aim4.config.Debug;
 import aim4.im.v2i.batch.ReorderingStrategy;
+import aim4.im.v2i.batch.WalletBasedReordering;
 import aim4.im.v2i.policy.BasePolicy;
 import aim4.im.v2i.policy.BasePolicyCallback;
 import aim4.im.v2i.policy.BasePolicy.ProposalFilterResult;
@@ -353,7 +354,6 @@ public class BatchModeRequestHandler implements RequestHandler {
    */
   private Set<Integer> lastVinInBatch = new HashSet<Integer>();
 
-
   /////////////////////////////////
   // CONSTRUCTORS
   /////////////////////////////////
@@ -459,7 +459,12 @@ public class BatchModeRequestHandler implements RequestHandler {
     // filter the proposals
     ProposalFilterResult filterResult =
       BasePolicy.standardProposalsFilter(proposals, currentTime);
-
+    
+    //add all rejected proposals to the walletBasedReording strategy queue --> Alex Humphry
+    //if(reorderingStrategy instanceof WalletBasedReordering && (filterResult.getReason() == null || !filterResult.getReason().equals(Reject.Reason.ARRIVAL_TIME_TOO_LATE))){
+    addRejectMsgToWallet(msg, filterResult, currentTime);
+    //}
+    
     if (filterResult.isNoProposalLeft()) {
       // reject it immediately (note that the existing proposals of the vehicle
       // has been removed from the queue.
@@ -490,8 +495,7 @@ public class BatchModeRequestHandler implements RequestHandler {
     }
   }
 
-
-  /**
+/**
    * Get the statistic collector.
    *
    * @return the statistic collector
@@ -671,7 +675,34 @@ public class BatchModeRequestHandler implements RequestHandler {
       }
     }
   }
-
+  
+  /**
+   * Add the vehicle to the memory structure within the Wallet Based Reordering Strategy
+   * 
+   * @author Alexander Humphry
+   * @param msg the request message
+   */
+  private void addRejectMsgToWallet(Request msg, ProposalFilterResult filterResult, double currentTime) {
+	// TODO Auto-generated method stub
+	if(!(reorderingStrategy instanceof WalletBasedReordering && (filterResult.getReason() == null || !filterResult.getReason().equals(Reject.Reason.ARRIVAL_TIME_TOO_LATE)))){
+		return;
+	}
+	NavigableSet<IndexedProposal> iProposals = new TreeSet<IndexedProposal>();
+	List<IndexedProposal> proposalGroup = new LinkedList<IndexedProposal>();
+	WalletBasedReordering strat = (WalletBasedReordering) this.reorderingStrategy;
+	
+	for(Proposal proposal : msg.getProposals()){
+		IndexedProposal iProposal = new IndexedProposal(-1,
+										                proposal,
+										                msg,
+										                proposalGroup,
+										                currentTime); // the subsmission time
+		proposalGroup.add(iProposal);
+		iProposals.add(iProposal);
+	}
+	
+	strat.getBidLaneTracker().refreshTraffic(iProposals, currentTime);
+  }
 
 
   /////////////////////////////////

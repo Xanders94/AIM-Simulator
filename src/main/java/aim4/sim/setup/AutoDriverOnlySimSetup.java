@@ -34,6 +34,7 @@ import aim4.config.Debug;
 import aim4.config.SimConfig;
 import aim4.driver.pilot.V2IPilot;
 import aim4.im.v2i.batch.RoadBasedReordering;
+import aim4.im.v2i.batch.WalletBasedReordering;
 import aim4.im.v2i.reservation.ReservationGridManager;
 import aim4.map.GridMap;
 import aim4.map.GridMapUtil;
@@ -83,7 +84,7 @@ public class AutoDriverOnlySimSetup extends BasicSimSetup implements SimSetup {
   /** Whether the bidding variant of batch processing is enabled*/
   private boolean isBidMode = false;
   /** The Mode Type*/
-  private ModeType modeType = ModeType.BATCH_MODE;
+  private ModeType modeType = ModeType.BID_MODE;
   /** The traffic type */
   private TrafficType trafficType = TrafficType.UNIFORM_RANDOM_NO_LANE_CROSS;//default setting is "TrafficType.UNIFORM_RANDOM"
   /** The traffic level in the horizontal direction */
@@ -311,6 +312,7 @@ public class AutoDriverOnlySimSetup extends BasicSimSetup implements SimSetup {
     	setTrafficMode(layout);
     	break;
     case BID_MODE:
+    	this.setBatchModeProcessingInterval(WalletBasedReordering.DEFAULT_PROCESSING_INTERVAL);
     	GridMapUtil.setBidBatchManagers(layout, currentTime, gridConfig, 
 				  processingInterval);
     	setTrafficMode(layout);
