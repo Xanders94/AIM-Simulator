@@ -11,6 +11,8 @@ import aim4.config.Debug;
 import aim4.im.v2i.RequestHandler.BatchModeRequestHandler.IndexedProposal;
 import aim4.map.SpawnPoint;
 
+//add protected boolean to stop reject message cars from being purged from the list
+
 /**
  * 
  * @author Alexander
