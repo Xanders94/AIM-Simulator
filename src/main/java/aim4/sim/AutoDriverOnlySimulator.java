@@ -411,11 +411,14 @@ public class AutoDriverOnlySimulator implements Simulator {
         if (canSpawnVehicle(spawnPoint)) {          
 	        for(SpawnSpec spawnSpec : spawnSpecs) {
 	        	tempSpawnPoint = congestionBalance(spawnPoint, spawnSpec);
-	        	VehicleSimView vehicle = makeVehicle(tempSpawnPoint, spawnSpec);
-	        	VinRegistry.registerVehicle(vehicle); // Get vehicle a VIN number
-	        	vinToVehicles.put(vehicle.getVIN(), vehicle);
+	        	if(canSpawnVehicle(tempSpawnPoint)){
+		        	VehicleSimView vehicle = makeVehicle(tempSpawnPoint, spawnSpec);
+		        	VinRegistry.registerVehicle(vehicle); // Get vehicle a VIN number
+		        	vinToVehicles.put(vehicle.getVIN(), vehicle);
+		        	
+	        	}
 	        	break; // only handle the first spawn vehicle
-	               // TODO: need to fix this
+		               // TODO: need to fix this
 	        }
         } // else ignore the spawnSpecs and do nothing
       }
