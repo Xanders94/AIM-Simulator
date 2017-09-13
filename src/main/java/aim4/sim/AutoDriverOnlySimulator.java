@@ -172,11 +172,11 @@ public class AutoDriverOnlySimulator implements Simulator {
     simCreatorConnections = new ArrayList<SimulatorSerializer>();
     
     //add simulator connections
-    //simCreatorConnections.add(new SimulatorSerializer(this,2502, "192.168.0.2",SimulatorSerializer.ODPair.NORTH_SOUTH)); //sim1 - maintenance
+    simCreatorConnections.add(new SimulatorSerializer(this,2502, "192.168.0.2",SimulatorSerializer.ODPair.NORTH_SOUTH)); //sim1 - maintenance
     simCreatorConnections.add(new SimulatorSerializer(this,2500, "192.168.0.3",SimulatorSerializer.ODPair.EAST_WEST)); //sim2
     simCreatorConnections.add(new SimulatorSerializer(this,2504, "192.168.0.4",SimulatorSerializer.ODPair.SOUTH_NORTH)); //sim3
     simCreatorConnections.add(new SimulatorSerializer(this,2506, "192.168.0.5",SimulatorSerializer.ODPair.WEST_NORTH)); //sim4
-    //simCreatorConnections.add(new SimulatorSerializer(this,2508, "192.168.0.6",SimulatorSerializer.ODPair.NORTH_EAST)); //sim5 - maintenance
+    simCreatorConnections.add(new SimulatorSerializer(this,2508, "192.168.0.6",SimulatorSerializer.ODPair.NORTH_EAST)); //sim5
     
     hasRun = false;
     

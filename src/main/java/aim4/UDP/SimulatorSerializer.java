@@ -314,6 +314,12 @@ public class SimulatorSerializer {
 					+ "#";
 			vin++;
 		}
+		//check playerVehicle isn't null and is 
+		if(getPlayerVehicle() != null) {
+			if(!sim.getActiveVehicles().contains(getPlayerVehicle())) {
+				setPlayerVehicle(null);
+			}
+		}
 		//add playerVehicle
 		
 		if(getPlayerVehicle() != null) {
@@ -366,6 +372,35 @@ public class SimulatorSerializer {
 					+ "#" + (float) Math.floor(tireRollAngle * 10000)/10000 //rotation angle of tires in radians
 					+ "#";
 			//vin++;
+		} else {
+			double offset = 12.0;// + 0.5 * 157.5;
+			xCoord = -offset;// - 157.5;
+			yCoord = offset;// - 157.5;
+
+			//heading = 0.875 * 2 * Math.PI;
+			heading = 0;
+
+			double steering = 0.0;
+			//convert local velocity to global x and y velocities
+			double velocityX = 0.0;
+			double velocityY = 0.0;
+
+			//assuming 17in wheel calc tire roll over time step
+			double length = 0;
+			double angle = (length * 360) / (4 * Math.PI * 0.2159);
+			tireRollAngle = Math.toRadians(angle);
+			//limit outgoing numbers to 3dp, assume number no larger than 10,000.9999
+			//start# = 6, end = 3, vehicle = 53 * (7 + 11 * 7), proxy# = 6, total max packet = 4467 bytes, packet = 
+			outgoing += 52
+					//+ "#" + bVehicle.getVIN() + "<=="
+					+ "#" + (float) Math.floor(xCoord * 10000)/10000
+					+ "#" + (float) Math.floor(yCoord * 10000)/10000
+					+ "#" + (float) Math.floor(heading * 10000)/10000
+					+ "#" + (float) Math.floor(velocityX * 10000)/10000
+					+ "#" + (float) Math.floor(velocityY * 10000)/10000
+					+ "#" + (float) Math.floor(steering * 10000)/10000
+					+ "#" + (float) Math.floor(tireRollAngle * 10000)/10000 //rotation angle of tires in radians
+					+ "#";
 		}
 		
 		/*if(initialised && playerVehicle != null) {

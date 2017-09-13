@@ -84,7 +84,7 @@ public class AutoDriverOnlySimSetup extends BasicSimSetup implements SimSetup {
   /** Whether the bidding variant of batch processing is enabled*/
   private boolean isBidMode = false;
   /** The Mode Type*/
-  private ModeType modeType = ModeType.BID_MODE;
+  private ModeType modeType = ModeType.LIGHT_MODE;
   /** The traffic type */
   private TrafficType trafficType = TrafficType.UNIFORM_RANDOM_NO_LANE_CROSS;//default setting is "TrafficType.UNIFORM_RANDOM"
   /** The traffic level in the horizontal direction */
