@@ -56,13 +56,17 @@ public class Wallet {
 		return totalFundsAvailable;
 	}
 	
-	public double setBid(double amount) {
-		if(amount > totalFundsAvailable){
-			bid = totalFundsAvailable;
+	public double setBid(double amount, boolean complex) {
+		if(complex){
+			if(amount > totalFundsAvailable){
+				bid = totalFundsAvailable;
+			} else {
+				bid = amount;
+			}
+			return bid;
 		} else {
-			bid = amount;
+			return bid;
 		}
-		return bid;
 	}
 	
 	public void setWalletAmount(double amount){

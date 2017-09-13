@@ -81,7 +81,11 @@ public class SimulatorSerializer {
 	boolean recieveEnable = false;
 	boolean initialised;
 	boolean initialisedNoVehicle;
+	
 	ODPair path = null;
+	double playerBid = 0;
+	String simID = null;
+	double playerSpawnTime;
 	
 	Random rand = new Random();
 	
@@ -111,13 +115,30 @@ public class SimulatorSerializer {
 		this.path = path;
 	}
 	
+	public SimulatorSerializer(AutoDriverOnlySimulator sim, int port, String address, ODPair path, double bid, String simID){
+		this.sim = sim;
+		//this.connection = new UDPSocket(2501, "192.168.1.141");
+		initialised = false;
+		initialisedNoVehicle = false;
+		this.connection = new UDPSocket(port, address, false);
+		setPlayerVehicle(null);
+		this.path = path;
+		this.playerBid = bid;
+		this.simID = simID;
+	}
+	
 	public Simulator getSim(){
 		return sim;
 	}
 	public void setSim(AutoDriverOnlySimulator sim){
 		this.sim = sim;
 	}
-	
+	public void setBid(double bid){
+		this.playerBid = bid;
+	}
+	public double getBid(){
+		return this.playerBid;
+	}
 	public boolean isInitialisedNoVehicles() {
 		return initialisedNoVehicle;
 	}
@@ -147,7 +168,7 @@ public class SimulatorSerializer {
 		return false;
 	}
 	
-	public boolean setVinToVehicles(double timeStep, Map<Integer,VehicleSimView> vinToVehicles, ODPair path){
+	public boolean setVinToVehicles(double timeStep, Map<Integer,VehicleSimView> vinToVehicles, ODPair path, double bid){
 		this.vinToVehicles = vinToVehicles;
 		
 		if(recieveEnable && this.generateProxyVehicle(timeStep) != null){
@@ -156,7 +177,7 @@ public class SimulatorSerializer {
 		} else if(!recieveEnable && !initialised){
 			initialised = true;
 			//this.playerVehicle = generatePlayerVehicle(this.sim, path);
-			setPlayerVehicle(generatePlayerVehicle(this.sim, path));
+			setPlayerVehicle(generatePlayerVehicle(this.sim, path, bid));
 			if(getPlayerVehicle() == null) {
 				return false;
 			}
@@ -317,6 +338,7 @@ public class SimulatorSerializer {
 		//check playerVehicle isn't null and is 
 		if(getPlayerVehicle() != null) {
 			if(!sim.getActiveVehicles().contains(getPlayerVehicle())) {
+				debugPrint(vehicle);
 				setPlayerVehicle(null);
 			}
 		}
@@ -437,6 +459,20 @@ public class SimulatorSerializer {
 					+ "#";
 		}
 		return outgoing + "End";
+	}
+
+	private void debugPrint(VehicleSimView vehicle) {
+		//print out vin, spawn time, delistTime, bid, path
+		double delta = sim.getSimulationTime()-playerSpawnTime;
+		System.out.println(this.simID + 
+				": Vin: " + playerVehicle.getVIN() + 
+				", Spawn Time:" + playerSpawnTime + 
+				", Finish Time:" + sim.getSimulationTime() + 
+				", Delta Time:" + delta + 
+				", Bid:" + playerBid +
+				", Path Used:" + this.getPath()
+				);
+		
 	}
 
 	private Point2D getProximityOffset(int playerVehicle, double offsetDist) {
@@ -674,7 +710,7 @@ public class SimulatorSerializer {
 	 * 
 	 * to test
 	 */
-	private VehicleSimView generatePlayerVehicle(Simulator sim, ODPair path) {
+	private VehicleSimView generatePlayerVehicle(Simulator sim, ODPair path, double bid) {
 		boolean sucessful = false;
 		ArrayList<SpawnPoint> candidateSpawns = new ArrayList<SpawnPoint>();
 		ArrayList<Road> candidateDestinations = new ArrayList<Road>();
@@ -735,9 +771,11 @@ public class SimulatorSerializer {
 		}
 		//create spawn spec
 		spawnSpec = new SpawnSpec(sim.getSimulationTime(), VehicleSpecDatabase.getVehicleSpecByName("SEDAN"), destRoad);
+		this.playerSpawnTime = sim.getSimulationTime();
 		if(this.sim.canSpawnVehicle(initSpawnPoint)){
 			vehicle = this.sim.makeVehicle(initSpawnPoint, spawnSpec);
 			if(vehicle != null){
+				vehicle.getDriver().getWallet().setBid(bid, false);
 				VinRegistry.registerVehicle(vehicle); // Get vehicle a VIN number
 				vinToVehicles.put(vehicle.getVIN(), vehicle);
 			} else {
