@@ -49,7 +49,6 @@ import java.util.TreeMap;
 import java.util.Random;
 
 import aim4.UDP.SimulatorSerializer;
-
 import aim4.config.Debug;
 import aim4.config.DebugPoint;
 import aim4.driver.AutoDriver;
@@ -405,35 +404,19 @@ public class AutoDriverOnlySimulator implements Simulator {
    */
   private void spawnVehicles(double timeStep) {
 	  int vanNumber = 0;
+	  SpawnPoint tempSpawnPoint = null;
     for(SpawnPoint spawnPoint : basicMap.getSpawnPoints()) {
       List<SpawnSpec> spawnSpecs = spawnPoint.act(timeStep);
       if (!spawnSpecs.isEmpty()) {
-        if (canSpawnVehicle(spawnPoint)) {
-          //simcreator modification
-          //limits spawn of large wheelbase vehicles
-          if(true || this.vinToVehicles.size() <= (52 - spawnSpecs.size())){
-            for(SpawnSpec spawnSpec : spawnSpecs) {
-            	if(spawnSpec.getVehicleSpec().getName().equals("VAN")){
-            		//check if more then 4 vans currently in sim
-            		vanNumber = 0;
-            		for(VehicleSimView vehicle : getActiveVehicles()){
-            			if(vehicle.getSpec().getName().equals("VAN")){
-            				vanNumber++;
-            			}
-            		}
-            		//use to change the number of vans spawned
-            		if(vanNumber > 4){
-            			continue;
-            		}
-            	}
-            	//end simcreator modification
-            	VehicleSimView vehicle = makeVehicle(spawnPoint, spawnSpec);
-            	VinRegistry.registerVehicle(vehicle); // Get vehicle a VIN number
-            	vinToVehicles.put(vehicle.getVIN(), vehicle);
-            	break; // only handle the first spawn vehicle
-                   // TODO: need to fix this
-            }
-          }
+        if (canSpawnVehicle(spawnPoint)) {          
+	        for(SpawnSpec spawnSpec : spawnSpecs) {
+	        	tempSpawnPoint = congestionBalance(spawnPoint, spawnSpec);
+	        	VehicleSimView vehicle = makeVehicle(tempSpawnPoint, spawnSpec);
+	        	VinRegistry.registerVehicle(vehicle); // Get vehicle a VIN number
+	        	vinToVehicles.put(vehicle.getVIN(), vehicle);
+	        	break; // only handle the first spawn vehicle
+	               // TODO: need to fix this
+	        }
         } // else ignore the spawnSpecs and do nothing
       }
     }
@@ -463,7 +446,9 @@ public class AutoDriverOnlySimulator implements Simulator {
    */
 
 
-  /**
+
+
+/**
    * Whether a spawn point can spawn any vehicle
    *
    * @param spawnPoint  the spawn point
@@ -597,6 +582,116 @@ public class AutoDriverOnlySimulator implements Simulator {
     }
 
     return vehicleLists;
+  }
+  /**
+   * determines whether congestion on a particular road unnecessarily slows down straight traffic
+   * If so, outputs the spawn point of a neighboring lane in the road experiencing the least congestion
+   * @param spawnPoint
+   * @param spawnSpecs
+   * @return
+   */
+  private SpawnPoint congestionBalance(SpawnPoint spawnPoint,
+		SpawnSpec spawnSpec) {
+	  if(!pathIsStraight(spawnPoint.getHeading(),spawnSpec.getDestinationRoad().getIndexLane().getInitialHeading())){
+		  return spawnPoint;
+	  }
+	  
+	  int deltaL = 0;
+	  int deltaR = 0;
+	  
+	  int candHurdle = 5;
+	  
+	  boolean right = false;
+	  boolean left = false;
+	  
+	  //get candidate Lanes
+	  Lane currLane = spawnPoint.getLane();
+	  Lane laneLeft = spawnPoint.getLane().getLeftNeighbor();
+	  Lane laneRight = spawnPoint.getLane().getRightNeighbor();
+	  
+	  //store lane fill
+	  if(laneLeft != null){
+		  left = true;
+	  }
+	  if(laneRight != null){
+		  right = true;
+	  }
+	  
+	  //Initialize vehicle arrays
+	  ArrayList<Integer> vinsCurrLane = new ArrayList<Integer>();
+	  ArrayList<Integer> vinsLeftLane = new ArrayList<Integer>();
+	  ArrayList<Integer> vinsRightLane = new ArrayList<Integer>();
+	  
+	  //if lanes not null, determine traffic load
+	  for(VehicleSimView vehicle : vinToVehicles.values()){
+		  if(vehicle.getDriver().getCurrentLane() == currLane){
+			  vinsCurrLane.add(vehicle.getVIN());
+		  } else if(left && vehicle.getDriver().getCurrentLane() == laneLeft){
+			  vinsLeftLane.add(vehicle.getVIN());
+		  } else if(right && vehicle.getDriver().getCurrentLane() == laneRight){
+			  vinsRightLane.add(vehicle.getVIN());
+		  }
+	  }
+	  //count lane deltas
+	  //higher numbers indicate congestion in center lane relative to each candidate lane
+	  if(laneLeft != null){
+		  deltaL = vinsCurrLane.size() - vinsLeftLane.size();
+	  }
+	  if(laneRight != null){
+		  deltaR = vinsCurrLane.size() - vinsLeftLane.size();
+	  }
+	  
+	  //reset left and right boolean values
+	  right = false;
+	  left = false;
+	  
+	  //determine if delta is high enough
+	  if(deltaL > candHurdle){
+		  left = true;
+	  }
+	  if(deltaR > candHurdle){
+		  right = true;
+	  }
+	  
+	  //Prioritize less congested option
+	  if(left && right){
+		  if(deltaL < deltaR){
+			  right = false;
+		  } else {
+			  left = false;
+		  }
+	  }
+	  
+	  //
+
+	  if(left){
+		  for(SpawnPoint sp : Debug.currentMap.getSpawnPoints()){
+			  if(sp.getLane() == laneLeft){
+				  return sp;
+			  }
+		  }
+	  }
+	  if(right){
+		  for(SpawnPoint sp : Debug.currentMap.getSpawnPoints()){
+			  if(sp.getLane() == laneRight){
+				  return sp;
+			  }
+		  }
+	  }
+	  
+	  
+	return spawnPoint;
+}
+  
+  private boolean pathIsStraight(double initHeading, double finalHeading){
+	  if(Math.abs(initHeading - finalHeading) < Math.PI * 0.1){
+		  return true;
+	  }
+	  if(Math.abs(initHeading + 2*Math.PI - finalHeading) < Math.PI * 0.1 || 
+			  Math.abs(initHeading - 2*Math.PI - finalHeading) < Math.PI * 0.1){
+		  return true;
+	  }
+	  return false;
   }
 
   /**
@@ -1206,4 +1301,5 @@ public class AutoDriverOnlySimulator implements Simulator {
 	  }
 	    
   }
+  
 }
