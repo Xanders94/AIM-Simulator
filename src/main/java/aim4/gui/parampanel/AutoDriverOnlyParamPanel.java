@@ -70,7 +70,7 @@ public class AutoDriverOnlyParamPanel extends JPanel {
     speedLimitSlider =
       new LabeledSlider(0.0, 80.0,
                         simSetup.getSpeedLimit(),
-                        10.0, 5.0,
+                        10.0, 1.0,
                         "Speed Limit: %.0f meters/second",
                         "%.0f");
     add(speedLimitSlider);
