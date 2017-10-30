@@ -51,6 +51,7 @@ import java.util.Random;
 import aim4.UDP.SimulatorSerializer;
 import aim4.config.Debug;
 import aim4.config.DebugPoint;
+import aim4.conflictPoint.ConflictPointGeneratorSimple;
 import aim4.driver.AutoDriver;
 import aim4.driver.DriverSimView;
 import aim4.driver.ProxyDriver;
@@ -193,6 +194,10 @@ public class AutoDriverOnlySimulator implements Simulator {
     testProgramSelect(2, bidSet);
     hasRun = false;
     
+    //conflict point test
+	ConflictPointGeneratorSimple test = new ConflictPointGeneratorSimple(this.basicMap);
+	test.generateConflictPoints(this.basicMap.getIntersectionManagers().get(0), 0, true);
+    
   }
 
   /////////////////////////////////
@@ -234,6 +239,8 @@ public class AutoDriverOnlySimulator implements Simulator {
 		simSerializer.setVinToVehicles(timeStep, vinToVehicles);
 		simSerializer.setInitialisedNoVehicles(true);
 	}*/
+
+	
 	
     if (Debug.PRINT_SIMULATOR_STAGE) {
       System.err.printf("--------------------------------------\n");

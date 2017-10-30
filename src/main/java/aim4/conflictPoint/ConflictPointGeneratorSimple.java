@@ -19,7 +19,7 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 	BasicMap map;
 	Intersection inter;
 	
-	ConflictPointGeneratorSimple(BasicMap map){
+	public ConflictPointGeneratorSimple(BasicMap map){
 		this.map = map;
 	}
 	public List<Point2D> generateConflictPoints(IntersectionManager im,
@@ -70,7 +70,7 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 		for(Road oRoad : oRoads){
 			for(Road dRoad : dRoads){
 				//detect if straight turn
-				if(pathIsStraight(oRoad.getIndexLane().getTerminalHeading(), dRoad.getIndexLane().getInitialHeading())){
+				if(pathIsStraight(oRoad.getIndexLane().getTerminalHeading(), dRoad.getIndexLane().getInitialHeading()) || oRoad.getDual().equals(dRoad)){
 					continue;
 				}
 				//detect if restricted turning and is a right hand turn
@@ -96,15 +96,47 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 	 * @return
 	 */
 	private Arc2D generateArc(Lane oLane, Lane dLane){
-		Point2D start = oLane.getEndPoint();
-		Point2D end = dLane.getStartPoint();
+		Point2D start1 = oLane.getStartPoint();
+		Point2D end1 = dLane.getEndPoint();
+		//bring relevent point to intersection threshold
+		Point2D start, end;
+		
+		//if vertical
+		if(oLane.getEndPoint().getX() == oLane.getStartPoint().getX()){
+			if(start1.getY() == 0){
+				start = new Point2D.Double(start1.getX(),this.inter.getBoundingBox().getMinY());
+			}else{
+				start = new Point2D.Double(start1.getX(),this.inter.getBoundingBox().getMaxY());
+			}
+			//end is horizontal
+			if(end1.getX() == 0){
+				end = new Point2D.Double(this.inter.getBoundingBox().getMinX(),end1.getY());
+			} else {
+				end = new Point2D.Double(this.inter.getBoundingBox().getMaxX(),end1.getY());
+			}
+		} else {
+			//start is horizontal
+			if(start1.getX() == 0){
+				start = new Point2D.Double(this.inter.getBoundingBox().getMinX(),start1.getY());
+			}else{
+				start = new Point2D.Double(this.inter.getBoundingBox().getMaxX(),start1.getY());
+			}
+			//end is vertical
+			if(end1.getY() == 0){
+				end = new Point2D.Double(end1.getX(),this.inter.getBoundingBox().getMinY());
+			} else {
+				end = new Point2D.Double(end1.getX(),this.inter.getBoundingBox().getMaxY());
+			}
+		}
+		
+		
 		Arc2D result = new Arc2D.Double();
 		
 		result.setArcByCenter((start.getX() + end.getX())/2, 
 				(start.getY() + end.getY())/2, 
 				Math.abs(start.getY() - end.getY()), 
-				oLane.getTerminalHeading(), 
-				dLane.getInitialHeading(), 
+				oLane.getTerminalHeading()*180/Math.PI, 
+				dLane.getInitialHeading()*180/Math.PI, 
 				Arc2D.OPEN);
 		
 		return result;
@@ -133,17 +165,22 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 		
 		return result;
 	}
+	//assumes lines are ither horizontal or vertical
 	private ArrayList<Point2D> getLineIntersections(ArrayList<Line2D> lines){
 		
 		ArrayList<Point2D> result = new ArrayList<Point2D>();
 		
 		Line2D loi;
-		double a1;
-		double b1;
+		//double a1;
+		//double b1;
 		
 		Line2D los;
-		double a2;
-		double b2;
+		//double a2;
+		//double b2;
+		
+		
+		boolean horizontal1;
+		boolean horizontal2;
 		
 		Point2D poi;
 		double poix;
@@ -151,23 +188,46 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 		
 		for(int i = 0; i < lines.size(); i++){
 			loi = lines.get(i);
+			/*
+			if(loi.getX1() == loi.getX2()){
+				
+			}
 			a1 = (loi.getY2() - loi.getY1())/(loi.getX2()-loi.getX1());
-			b1 = loi.getY1() - (a1 * loi.getX1());
+			b1 = loi.getY1() - (a1 * loi.getX1());*/
+			if(loi.getX1() == loi.getX2()){
+				horizontal1 = true;
+			} else {
+				horizontal1 = false;
+			}
 			for(int j = i + 1; j < lines.size(); j++){
 				los = lines.get(j);
-				a2 = (los.getY2() - los.getY1())/(los.getX2()-los.getX1());
+				if(los.getX1() == los.getX2()){
+					horizontal2 = true;
+				} else {
+					horizontal2 = false;
+				}
+				if(horizontal1 == horizontal2){
+					continue;
+				}
+				if(horizontal1){
+					poix = loi.getX1();
+					poiy = los.getY1();
+				} else {
+					poix = los.getX1();
+					poiy = loi.getY1();
+				}
+				/*a2 = (los.getY2() - los.getY1())/(los.getX2()-los.getX1());
 				//check if parallel, if so, next calc
 				if(a1 == a2){
 					continue;
 				}
-				b2 = los.getY1() - (a2 * los.getX1());
+				
+				b2 = los.getY1() - (a2 * los.getX1());*/
 				//calc x point
-				poix = (b2 - b1)/(a1 - a2);
-				poiy = a1 * poix + b1;
+				/*poix = (b2 - b1)/(a1 - a2);
+				poiy = a1 * poix + b1;*/
 				poi = new Point2D.Double(poix, poiy);
-				if(loi.contains(poi)&&los.contains(poi)){
-					result.add(poi);
-				}
+				result.add(poi);
 			}
 		}
 		return result;
@@ -207,16 +267,13 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 		double xx;
 		double yy;
 		
+		double check;
 		
 		//arc and line intersection
 		for(Arc2D arc : arcs){
 			center = getArcFocusPoint(arc);
 			rad = Math.abs(arc.getStartPoint().getX() - arc.getEndPoint().getX());
 			for(Line2D line : lines){
-				//check if line intersects arc
-				if(!arc.intersects(line.getBounds2D())){
-					continue;
-				}
 				x1 = line.getX1() - center.getX();
 				x2 = line.getX2() - center.getX();
 				y1 = line.getY1() - center.getY();
@@ -226,10 +283,33 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 				dy = y2 - y1;
 				dr = Math.sqrt((dx*dx)+(dy*dy));
 				dd = x1*y2 - x2*y1;
+				//check for intersection
+				check = (rad*rad*dr*dr-dd*dd);
+				if(!willIntersect(line,arc)){
+					continue;
+				}
 				results.add(getLikelyPoint(dd,dy,dx,rad,dr, center.getX(), center.getY(),line));
 			}
 		}
 		return results;
+	}
+	
+	private boolean willIntersect(Line2D line, Arc2D arc){
+		boolean isVertical = false;
+		if(line.getX1() == line.getX2()){
+			isVertical = true;
+		}
+		if(isVertical){
+			if(line.getX1() < arc.getMaxX() && line.getX1() > arc.getMinX()){
+				return true;
+			}
+		} else {
+			if(line.getY1() < arc.getMaxY() && line.getY1() > arc.getMinY()){
+				return true;
+			}
+		}
+		return false;
+		
 	}
 	
 	private Point2D getLikelyPoint(double dd, double dy, double dx, double r, double dr, double centerX, double centerY, Line2D line){
@@ -247,13 +327,13 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 		factor2 = Math.abs(dy)*Math.sqrt(r*r*dr*dr - dd*dd);
 		
 		//++
-		candidates.add(new Point2D.Double((dd*dy+factor1)/(dr*dr),(-dd*dx+factor2)/(dr*dr)));
+		candidates.add(new Point2D.Double(((dd*dy+factor1)/(dr*dr)) + centerX,((-dd*dx+factor2)/(dr*dr)) + centerY));
 		//+-
-		candidates.add(new Point2D.Double((dd*dy+factor1)/(dr*dr),(-dd*dx-factor2)/(dr*dr)));
+		candidates.add(new Point2D.Double(((dd*dy+factor1)/(dr*dr)) + centerX,((-dd*dx-factor2)/(dr*dr)) + centerY));
 		//-+
-		candidates.add(new Point2D.Double((dd*dy-factor1)/(dr*dr),(-dd*dx+factor2)/(dr*dr)));
+		candidates.add(new Point2D.Double(((dd*dy-factor1)/(dr*dr)) + centerX,((-dd*dx+factor2)/(dr*dr)) + centerY));
 		//--
-		candidates.add(new Point2D.Double((dd*dy-factor1)/(dr*dr),(-dd*dx-factor2)/(dr*dr)));
+		candidates.add(new Point2D.Double(((dd*dy-factor1)/(dr*dr)) + centerX,((-dd*dx-factor2)/(dr*dr)) + centerY));
 		
 		for(Point2D cand : candidates){
 			if(line.contains(cand)){
@@ -263,6 +343,18 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 			}
 		}
 		return null;
+		//to get x
+		//circle: (x - h)^2 + (y - k)^2 = r^2
+		////(x^2 - 2*x*h + h^2) + (y^2 - 2 *y*k + k^2) = r^2
+		//line: y = a*x + b
+		////sub into above
+		////(x^2 - 2*x*h + h^2) + ((a*x + b)^2 - 2 *(ax + b)*k + k^2) = r^2
+		////a = x^2 + a^2*x^2
+		////b = -2x*(h+a*k)  
+		
+		
+		
+		
 	}
 	//assumes base points at corner of intersection
 	
