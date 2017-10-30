@@ -271,27 +271,88 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 		
 		//arc and line intersection
 		for(Arc2D arc : arcs){
-			center = getArcFocusPoint(arc);
-			rad = Math.abs(arc.getStartPoint().getX() - arc.getEndPoint().getX());
+			center = getArcFocusPoint(arc); // h and k
+			rad = Math.abs(arc.getStartPoint().getX() - arc.getEndPoint().getX()); // r
 			for(Line2D line : lines){
 				x1 = line.getX1() - center.getX();
 				x2 = line.getX2() - center.getX();
 				y1 = line.getY1() - center.getY();
 				y2 = line.getY2() - center.getY();
-				
-				dx = x2 - x1;
-				dy = y2 - y1;
-				dr = Math.sqrt((dx*dx)+(dy*dy));
-				dd = x1*y2 - x2*y1;
-				//check for intersection
-				check = (rad*rad*dr*dr-dd*dd);
+
 				if(!willIntersect(line,arc)){
 					continue;
 				}
-				results.add(getLikelyPoint(dd,dy,dx,rad,dr, center.getX(), center.getY(),line));
+				//if vertical
+				boolean vertical = false;
+				if(line.getX1() == line.getX2()){
+					vertical = true;
+				}
+				results.add(getLikelyPoint(line, arc));
 			}
 		}
 		return results;
+	}
+	
+	private Point2D getLikelyPoint(Line2D line, Arc2D arc){
+		
+		
+		Point2D center = getArcFocusPoint(arc); // h and k
+		double rad = Math.abs(arc.getStartPoint().getX() - arc.getEndPoint().getX()); // r
+		
+		
+		double x1, x2, y1, y2, y3, y4, a, b, h, k;
+		double aq,bq,cq;
+		
+		ArrayList<Point2D> cand = new ArrayList<Point2D>();
+		
+		boolean vertical = false;
+		if(line.getX1() == line.getX2()){
+			vertical = true;
+		}
+		
+		if(vertical){
+			x1 = line.getX1();
+			y1 = center.getY() + Math.sqrt(rad*rad - (x1 - center.getX())*(x1 - center.getX()));
+			y2 = center.getY() - Math.sqrt(rad*rad - (x1 - center.getX())*(x1 - center.getX()));
+			cand.add(new Point2D.Double(x1,y1));
+			cand.add(new Point2D.Double(x1,y2));
+			if(this.inter.getBoundingBox().contains(cand.get(0))){
+				return cand.get(0);
+			}
+			if(this.inter.getBoundingBox().contains(cand.get(1))){
+				return cand.get(1);
+			}
+			return null;
+		}
+		//if not vertical
+		a = (line.getY1() - line.getY2())/(line.getX1()-line.getX2());
+		b = line.getY1() - a * line.getX1();
+		h = center.getX();
+		k = center.getY();
+		aq = (1 + a*a);
+		bq = 2*a*b - 2*h - 2*a*k;
+		cq = h*h + k*k - 2*b*k + b*b-rad*rad;
+		
+		x1 = (-bq + Math.sqrt(bq*bq - 4*aq*cq))/(2*aq);
+		y1 = center.getY() + Math.sqrt(rad*rad - (x1 - center.getX())*(x1 - center.getX()));
+		y2 = center.getY() - Math.sqrt(rad*rad - (x1 - center.getX())*(x1 - center.getX()));
+		
+		cand.add(new Point2D.Double(x1,y1));
+		cand.add(new Point2D.Double(x1,y2));
+		
+		x2 = (-bq - Math.sqrt(bq*bq - 4*aq*cq))/(2*aq);
+		y3 = center.getY() + Math.sqrt(rad*rad - (x2 - center.getX())*(x2 - center.getX()));
+		y4 = center.getY() - Math.sqrt(rad*rad - (x2 - center.getX())*(x2 - center.getX()));
+		
+		cand.add(new Point2D.Double(x2,y3));
+		cand.add(new Point2D.Double(x2,y4));
+		
+		for(Point2D candidate : cand){
+			if(this.inter.getBoundingBox().contains(candidate)){
+				return candidate;
+			}
+		}
+		return null;
 	}
 	
 	private boolean willIntersect(Line2D line, Arc2D arc){
@@ -309,51 +370,6 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 			}
 		}
 		return false;
-		
-	}
-	
-	private Point2D getLikelyPoint(double dd, double dy, double dx, double r, double dr, double centerX, double centerY, Line2D line){
-		ArrayList<Point2D> candidates = new ArrayList<Point2D>();
-		Rectangle2D intersection = inter.getBoundingBox();
-		double factor1, factor2;
-		
-		//calc factor 1 = sgn*(dy)*dx*sqrt(r^2*dr^2-dd^2)
-		//calc factor 2 = |dy|*sqrt(r^2dr^2-dd^2)
-		if(dy < 0){
-			factor1 = -1 * dx * Math.sqrt(r*r*dr*dr - dd*dd);
-		} else {
-			factor1 = 1 * dx * Math.sqrt(r*r*dr*dr - dd*dd);
-		}
-		factor2 = Math.abs(dy)*Math.sqrt(r*r*dr*dr - dd*dd);
-		
-		//++
-		candidates.add(new Point2D.Double(((dd*dy+factor1)/(dr*dr)) + centerX,((-dd*dx+factor2)/(dr*dr)) + centerY));
-		//+-
-		candidates.add(new Point2D.Double(((dd*dy+factor1)/(dr*dr)) + centerX,((-dd*dx-factor2)/(dr*dr)) + centerY));
-		//-+
-		candidates.add(new Point2D.Double(((dd*dy-factor1)/(dr*dr)) + centerX,((-dd*dx+factor2)/(dr*dr)) + centerY));
-		//--
-		candidates.add(new Point2D.Double(((dd*dy-factor1)/(dr*dr)) + centerX,((-dd*dx-factor2)/(dr*dr)) + centerY));
-		
-		for(Point2D cand : candidates){
-			if(line.contains(cand)){
-				if(intersection.contains(cand)){
-					return cand;
-				}
-			}
-		}
-		return null;
-		//to get x
-		//circle: (x - h)^2 + (y - k)^2 = r^2
-		////(x^2 - 2*x*h + h^2) + (y^2 - 2 *y*k + k^2) = r^2
-		//line: y = a*x + b
-		////sub into above
-		////(x^2 - 2*x*h + h^2) + ((a*x + b)^2 - 2 *(ax + b)*k + k^2) = r^2
-		////a = x^2 + a^2*x^2
-		////b = -2x*(h+a*k)  
-		
-		
-		
 		
 	}
 	//assumes base points at corner of intersection
