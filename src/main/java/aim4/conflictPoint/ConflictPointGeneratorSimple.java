@@ -5,7 +5,6 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import aim4.im.Intersection;
@@ -246,48 +245,23 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 		return results;
 	}
 	private ArrayList<Point2D> getIntersectionArcLine(ArrayList<Arc2D> arcs, ArrayList<Line2D> lines){
-		// TODO Auto-generated method stub
 		ArrayList<Point2D> results = new ArrayList<Point2D>();
-		
-		//arc params
-		Point2D center;
-		double rad;
-		
-		//line params
-		double x1;
-		double x2;
-		double y1;
-		double y2;
-		
-		//calc params
-		double dx;
-		double dy;
-		double dr;
-		double dd;
-		double xx;
-		double yy;
-		
-		double check;
+
+		Point2D cand;
 		
 		//arc and line intersection
 		for(Arc2D arc : arcs){
-			center = getArcFocusPoint(arc); // h and k
-			rad = Math.abs(arc.getStartPoint().getX() - arc.getEndPoint().getX()); // r
+
 			for(Line2D line : lines){
-				x1 = line.getX1() - center.getX();
-				x2 = line.getX2() - center.getX();
-				y1 = line.getY1() - center.getY();
-				y2 = line.getY2() - center.getY();
 
 				if(!willIntersect(line,arc)){
 					continue;
 				}
-				//if vertical
-				boolean vertical = false;
-				if(line.getX1() == line.getX2()){
-					vertical = true;
+
+				cand = getLikelyPoint(line, arc);
+				if(cand != null){
+					results.add(cand);
 				}
-				results.add(getLikelyPoint(line, arc));
 			}
 		}
 		return results;
