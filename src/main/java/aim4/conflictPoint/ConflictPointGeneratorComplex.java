@@ -5,7 +5,9 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
+import aim4.im.Intersection;
 import aim4.im.IntersectionManager;
 import aim4.map.BasicMap;
 import aim4.map.Road;
@@ -21,15 +23,15 @@ public class ConflictPointGeneratorComplex implements ConflictPointGenerator {
 		this.map = map;
 	}
 	
-	public ArrayList<Point2D> generateConflictPoints(IntersectionManager im, double pointMergeDist, boolean restrictedTurning){
+	public ArrayList<Point2D> generateConflictPoints(Intersection i, boolean restrictedTurning){
 		
-		ArrayList<Road> originRoads = new ArrayList<Road>(im.getIntersection().getEntryRoads());
-		ArrayList<Road> destinationRoads = new ArrayList<Road>(im.getIntersection().getExitRoads());
+		ArrayList<Road> originRoads = new ArrayList<Road>(i.getEntryRoads());
+		ArrayList<Road> destinationRoads = new ArrayList<Road>(i.getExitRoads());
 		
 		ArrayList<Line2D> straightPaths = getStraightPaths(originRoads, destinationRoads);
 		ArrayList<Arc2D> curvedPaths = getCurvedPaths(originRoads, destinationRoads, restrictedTurning);
 		
-		ArrayList<Point2D> conflictPoints = getConflictPoints(straightPaths, curvedPaths, pointMergeDist);
+		ArrayList<Point2D> conflictPoints = getConflictPoints(straightPaths, curvedPaths, -1);//bring in line with simple varient
 		
 		
 		
@@ -158,5 +160,4 @@ public class ConflictPointGeneratorComplex implements ConflictPointGenerator {
 		  }
 		  return false;
 	  }
-	
 }

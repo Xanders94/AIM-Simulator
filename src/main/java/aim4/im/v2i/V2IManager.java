@@ -54,6 +54,7 @@ import aim4.msg.v2i.V2IMessage;
 import aim4.sim.StatCollector;
 import aim4.util.Registry;
 import aim4.util.TiledArea;
+import aim4.conflictPoint.*;
 
 /**
  * An intersection manager that takes requests from vehicles and coordinates
@@ -171,8 +172,14 @@ public class V2IManager extends IntersectionManager
     // properties of the intersection
     super(intersection, trackModel, currentTime, registry);
     // Set up the reservation grid
-    this.tiledArea = new TiledArea(intersection.getArea(),
+    boolean voronoi = true; //TODO debug
+    if(voronoi){
+    	ConflictPointGeneratorSimple cp = new ConflictPointGeneratorSimple();
+    	this.tiledArea = new TiledArea(intersection.getArea(), cp.generateConflictPoints(intersection, true));
+    } else {
+    	this.tiledArea = new TiledArea(intersection.getArea(),
                                    config.getGranularity());
+    }
     this.reservationGrid = new ReservationGrid(tiledArea.getXNum(),
                                                tiledArea.getYNum(),
                                                config.getGridTimeStep());

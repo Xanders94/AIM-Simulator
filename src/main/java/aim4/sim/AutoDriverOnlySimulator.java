@@ -196,7 +196,7 @@ public class AutoDriverOnlySimulator implements Simulator {
     
     //conflict point test
 	ConflictPointGeneratorSimple test = new ConflictPointGeneratorSimple(this.basicMap);
-	test.generateConflictPoints(this.basicMap.getIntersectionManagers().get(0), 0, true);
+	test.generateConflictPoints(this.basicMap.getIntersectionManagers().get(0).getIntersection(), true);
     
   }
 
