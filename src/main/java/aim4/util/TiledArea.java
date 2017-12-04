@@ -153,6 +153,8 @@ public class TiledArea {
   private final ArrayList<Tile> idToTiles;
   /** The number of tiles */
   private int numberOfTiles;
+  /** an indication that the tiles are square*/
+  private boolean rectangualarTiles;
 
   /////////////////////////////////
   // CLASS CONSTRUCTORS
@@ -166,6 +168,7 @@ public class TiledArea {
    */
   public TiledArea(Area area, double length) {
     this(area, length, length);
+    this.rectangualarTiles = true;
   }
 
   /**
@@ -180,6 +183,7 @@ public class TiledArea {
     this.rectangle = area.getBounds2D();
     this.xLength = xLength;
     this.yLength = yLength;
+    this.rectangualarTiles = true;
     xNum = ((int)(rectangle.getWidth() / xLength)) + 1;
     yNum = ((int)(rectangle.getHeight() / yLength)) + 1;
     tiles = new SquareTile[xNum][yNum];
@@ -192,6 +196,7 @@ public class TiledArea {
 	  this.rectangle = area.getBounds2D();
 	  this.xLength = rectangle.getWidth()/(points.size() + 1);
 	  this.yLength = rectangle.getHeight()/(points.size() + 1);
+	  this.rectangualarTiles = false;
 	  xNum = ((int)(rectangle.getWidth() / xLength)) + 1;
 	  yNum = ((int)(rectangle.getHeight() / yLength)) + 1;
 	  tiles = new PolyTile[xNum][yNum];
@@ -399,7 +404,7 @@ public class TiledArea {
     int firstRow = 0;
     int lastRow = yNum - 1;
     // only use short cut if 
-    /*
+    if(this.rectangualarTiles){
 	    firstColumn =
 	      Math.max(0,
 	               (int)((boundingBox.getMinX() - rectangle.getMinX()) /
@@ -416,11 +421,10 @@ public class TiledArea {
 	      Math.min(yNum - 1,
 	               (int)((boundingBox.getMaxY() - rectangle.getMinY()) /
 	                     yLength));
-	    */
 	    // Now go through all the potential tiles and find the ones that this
 	    // shape intersects
-	    lastColumn = xNum - 1;
-	    lastRow = yNum - 1;
+	    //lastColumn = xNum - 1;
+	    //lastRow = yNum - 1;
 	    for(int c = firstColumn; c <= lastColumn; c++) {
 	      for(int r = firstRow; r <= lastRow; r++) {
 	        // If the tile exists, and it does intersect, add it to the list of
@@ -430,6 +434,13 @@ public class TiledArea {
 	          occupiedTiles.add(tiles[c][r]);
 	        }
 	      }
+	    }
+    } else {
+    	for(Tile tile : idToTiles){
+    		if(testIntersection(shape, tile.getShape())){
+    			occupiedTiles.add(tile);
+    		}
+    	}
     }
     return occupiedTiles;
   }
