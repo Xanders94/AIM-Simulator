@@ -32,7 +32,6 @@ package aim4.im.v2i.reservation;
 
 import java.awt.Shape;
 import java.awt.geom.Area;
-import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -839,9 +838,7 @@ public class ReservationGridManager implements
       }
       currentDuration = reservationGrid.getGridTimeStep();
     }
-    if(workingList.isEmpty()){
-    	  //System.err.println("working set empty");
-    }
+
     return new FindTileTimesBySimulationResult(workingList,
                                                reservationGrid
                                                .calcTime(currentIntTime));
@@ -936,14 +933,11 @@ public class ReservationGridManager implements
    *         for the current time
    */
   public List<? extends Shape> getDebugShapes() {
-    List<Path2D> reservedShapes = new ArrayList<Path2D>();
+    List<Rectangle2D> reservedRects = new ArrayList<Rectangle2D>();
     for(int i : reservationGrid.getReservedTilesAtTime(currentTime)) {
-    	if(i >= tiledArea.getNumberOfTiles()){
-    		break;
-    	}
-      reservedShapes.add(tiledArea.getTileById(i).getShape());
+      reservedRects.add(tiledArea.getTileById(i).getRectangle());
     }
-    return reservedShapes;
+    return reservedRects;
   }
 
 }

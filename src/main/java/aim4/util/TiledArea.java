@@ -32,16 +32,9 @@ package aim4.util;
 
 import java.awt.Shape;
 import java.awt.geom.Area;
-import java.awt.geom.Path2D;
-import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import aim4.voronoi.GraphEdge;
-import aim4.voronoi.Vertex;
-import aim4.voronoi.Voronoi;
 
 /**
  * A tiled area - a subdivision of an area into a grid of small rectangles.
@@ -52,24 +45,10 @@ public class TiledArea {
   // NESTED CLASSES
   /////////////////////////////////
 
-
-	public static interface Tile {
-		public int getX();
-		
-		public int getY();
-		
-		public int getId();
-		
-		public boolean isEdgeTile();
-		
-		public void setEdgeTile(boolean edgeTile);
-		
-		public Path2D getShape();
-	}
   /**
    * A tile.
    */
-  public static class SquareTile implements Tile {
+  public static class Tile {
     /** The area controlled by this tile. */
     private final Rectangle2D rectangle;
     /** the x-coordinate of this tile */
@@ -89,7 +68,7 @@ public class TiledArea {
      * @param y          the y-coordinate of the tile
      * @param id         the ID of the tile
      */
-    public SquareTile(Rectangle2D rectangle, int x, int y, int id) {
+    public Tile(Rectangle2D rectangle, int x, int y, int id) {
       this.rectangle = rectangle;
       this.x = x;
       this.y = y;
@@ -97,8 +76,8 @@ public class TiledArea {
     }
 
     /** Get the area controlled by this ReservationTile. */
-    public Path2D getShape() {
-      return new Path2D.Double(rectangle);
+    public Rectangle2D getRectangle() {
+      return rectangle;
     }
 
     /** Get the x-coordinate of this tile */
@@ -190,11 +169,12 @@ public class TiledArea {
     this.rectangualarTiles = true;
     xNum = ((int)(rectangle.getWidth() / xLength)) + 1;
     yNum = ((int)(rectangle.getHeight() / yLength)) + 1;
-    tiles = new SquareTile[xNum][yNum];
+    tiles = new Tile[xNum][yNum];
     idToTiles = new ArrayList<Tile>(xNum*yNum) ;
     createTiles();
     identifyEdgeTiles();
   }
+<<<<<<< HEAD
   public TiledArea(Area area, List<Point2D> points){
 	  this.area = area;
 	  this.rectangle = area.getBounds2D();
@@ -209,39 +189,41 @@ public class TiledArea {
 	  createPolyTiles(points);
 	  identifyEdgeTiles();
   }
+=======
+>>>>>>> parent of b32cce4... Voronoi diagram reintegration and testing
 
   /**
    * Create the tiles
    */
   private void createTiles() {
-      numberOfTiles = 0;
-      for(int x = 0; x < xNum; x++) {
-        for(int y = 0; y < yNum; y++) {
-          // Create a tile
-          // Start by finding the offset for this particular tile
-          double xOffset = x * xLength;
-          double yOffset = y * yLength;
-          // These should be granularity most of the time, except on the
-          // last row/column
-          double width = Math.min(xLength, rectangle.getWidth() - xOffset);
-          double height = Math.min(yLength, rectangle.getHeight() - yOffset);
-          // Don't forget to offset from the starting coordinates of the
-          // intersection bounding box
-          Rectangle2D tileRect =
-            new Rectangle2D.Double(rectangle.getMinX() + xOffset,
-                                   rectangle.getMinY() + yOffset,
-                                   width, height);
-          // Now that we have a rectangle for the tile, we can figure out
-          // whether it is actually in the area
-          if(area.intersects(tileRect)) {
-            // If it is in the area, let's make a new tile
-            tiles[x][y] = new SquareTile(tileRect, x, y, numberOfTiles);
-            idToTiles.add(tiles[x][y]);
-            numberOfTiles++;
-          }
+    numberOfTiles = 0;
+    for(int x = 0; x < xNum; x++) {
+      for(int y = 0; y < yNum; y++) {
+        // Create a tile
+        // Start by finding the offset for this particular tile
+        double xOffset = x * xLength;
+        double yOffset = y * yLength;
+        // These should be granularity most of the time, except on the
+        // last row/column
+        double width = Math.min(xLength, rectangle.getWidth() - xOffset);
+        double height = Math.min(yLength, rectangle.getHeight() - yOffset);
+        // Don't forget to offset from the starting coordinates of the
+        // intersection bounding box
+        Rectangle2D tileRect =
+          new Rectangle2D.Double(rectangle.getMinX() + xOffset,
+                                 rectangle.getMinY() + yOffset,
+                                 width, height);
+        // Now that we have a rectangle for the tile, we can figure out
+        // whether it is actually in the area
+        if(area.intersects(tileRect)) {
+          // If it is in the area, let's make a new tile
+          tiles[x][y] = new Tile(tileRect, x, y, numberOfTiles);
+          idToTiles.add(tiles[x][y]);
+          numberOfTiles++;
         }
       }
     }
+<<<<<<< HEAD
     /**
      * @author Alexander Humphry
      * Create the tiles with predefined polygons (4 lane road)
@@ -275,6 +257,8 @@ public class TiledArea {
   	  tiles = tilesStore.get(tileSetId);
   	  idToTiles = idToTilesStore.get(tileSetId);
   	  numberOfTiles = idToTiles.size();
+=======
+>>>>>>> parent of b32cce4... Voronoi diagram reintegration and testing
   }
 
   /**
@@ -422,6 +406,7 @@ public class TiledArea {
     // subtracting the two values), then finding how this fits into our
     // 2D array of tiles, by dividing by the width of the rectangle, and
     // multiplying by the number of columns or rows.
+<<<<<<< HEAD
     int firstColumn = 0;
     int lastColumn = xNum - 1;
     int firstRow = 0;
@@ -869,4 +854,37 @@ public class TiledArea {
 		  }
 	  }
   }
+=======
+    int firstColumn =
+      Math.max(0,
+               (int)((boundingBox.getMinX() - rectangle.getMinX()) /
+                     xLength));
+    int lastColumn =
+      Math.min(xNum - 1,
+               (int)((boundingBox.getMaxX() - rectangle.getMinX()) /
+                     xLength));
+    int firstRow =
+      Math.max(0,
+               (int)((boundingBox.getMinY() - rectangle.getMinY()) /
+                     yLength));
+    int lastRow =
+      Math.min(yNum - 1,
+               (int)((boundingBox.getMaxY() - rectangle.getMinY()) /
+                     yLength));
+    // Now go through all the potential tiles and find the ones that this
+    // shape intersects
+    for(int c = firstColumn; c <= lastColumn; c++) {
+      for(int r = firstRow; r <= lastRow; r++) {
+        // If the tile exists, and it does intersect, add it to the list of
+        // tiles that are occupied
+        if(tiles[c][r] != null &&
+           shape.intersects(tiles[c][r].getRectangle())) {
+          occupiedTiles.add(tiles[c][r]);
+        }
+      }
+    }
+    return occupiedTiles;
+  }
+
+>>>>>>> parent of b32cce4... Voronoi diagram reintegration and testing
 }
