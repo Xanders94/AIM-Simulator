@@ -148,13 +148,17 @@ public class TiledArea {
   /** The length of the tiles in the y-direction. */
   private final double yLength;
   /** The tiles in this area. */
-  private final Tile[][] tiles;
+  private Tile[][] tiles;
   /** A mapping from id to tiles */
-  private final ArrayList<Tile> idToTiles;
+  private ArrayList<Tile> idToTiles;
   /** The number of tiles */
   private int numberOfTiles;
   /** an indication that the tiles are square*/
   private boolean rectangualarTiles;
+  /** stores different configurations of tiles*/
+  private ArrayList<ArrayList<Tile>> idToTilesStore = new ArrayList<ArrayList<Tile>>();
+  private ArrayList<Tile[][]> tilesStore = new ArrayList<Tile[][]>();
+  private int tileSetId;
 
   /////////////////////////////////
   // CLASS CONSTRUCTORS
@@ -201,6 +205,7 @@ public class TiledArea {
 	  yNum = ((int)(rectangle.getHeight() / yLength)) + 1;
 	  tiles = new PolyTile[xNum][yNum];
 	  idToTiles = new ArrayList<Tile>(xNum*yNum);
+	  tileSetId = 0;
 	  createPolyTiles(points);
 	  identifyEdgeTiles();
   }
@@ -245,13 +250,31 @@ public class TiledArea {
   	  numberOfTiles = 0;
   	  PolyTileStore store = new PolyTileStore();//TODO
   	  //add all tile definitions here, defined by adding points, points to be added manualy
+  	  
+  	  //TODO
+  	  //check correct operation of code to end of function
+  	  Tile[][] tempTiles = new Tile[xNum][yNum];
+  	  ArrayList<Tile> tempIdToTiles = new ArrayList<Tile>();
   	  for(PolyTile tile : store.getTiles()){
+		  if(tile.getPolygon().intersects(area.getBounds2D())){
+			  tempTiles[tile.getX()][tile.getY()] = tile;
+			  tempIdToTiles.add(tiles[tile.getX()][tile.getY()]);
+		  }
+  	  }
+  	  tilesStore.add(tempTiles);
+  	  idToTilesStore.add(tempIdToTiles);
+  	  
+  	  
+  	  /*for(PolyTile tile : store.getTiles()){
   		  if(tile.getPolygon().intersects(area.getBounds2D())){
   			  tiles[tile.getX()][tile.getY()] = tile;
   			  idToTiles.add(tiles[tile.getX()][tile.getY()]);
   			  numberOfTiles++;
   		  }
-  	  }
+  	  }*/
+  	  tiles = tilesStore.get(tileSetId);
+  	  idToTiles = idToTilesStore.get(tileSetId);
+  	  numberOfTiles = idToTiles.size();
   }
 
   /**
@@ -431,7 +454,7 @@ public class TiledArea {
 	        // tiles that are occupied
 	        if(tiles[c][r] != null &&
 	           testIntersection(shape,tiles[c][r].getShape())) {
-	          occupiedTiles.add(tiles[c][r]);
+	           occupiedTiles.add(tiles[c][r]);
 	        }
 	      }
 	    }
@@ -453,7 +476,10 @@ public class TiledArea {
   public boolean testIntersection(Shape shapeA, Shape shapeb){
 	  Area areaA = new Area(shapeA);
 	  areaA.intersect(new Area(shapeb));
-	  return !areaA.isEmpty();
+	  if(areaA.isEmpty()){
+		  return false;
+	  }
+	  return true;
   }
   /**
    * @author Alexander Humphry
