@@ -54,7 +54,7 @@ import aim4.msg.v2i.V2IMessage;
 import aim4.sim.StatCollector;
 import aim4.util.Registry;
 import aim4.util.TiledArea;
-
+import aim4.conflictPoint.*;
 /**
  * An intersection manager that takes requests from vehicles and coordinates
  * their traversals of the intersection to ensure that there are no
@@ -132,6 +132,10 @@ public class V2IManager extends IntersectionManager
    * The manager for the reservation grid
    */
   private ReservationGridManager reservationGridManager;
+  
+  private Intersection intersection;
+  private ReservationGridManager.Config config;
+  private boolean voronoi;
 
   // aczs
 
@@ -170,9 +174,17 @@ public class V2IManager extends IntersectionManager
     // Use the superclass's constructor to set up all the physical
     // properties of the intersection
     super(intersection, trackModel, currentTime, registry);
+    this.intersection = intersection;
+    this.config = config;
     // Set up the reservation grid
-    this.tiledArea = new TiledArea(intersection.getArea(),
+    this.voronoi = true; //TODO debug
+    if(voronoi){
+    	ConflictPointGeneratorSimple cp = new ConflictPointGeneratorSimple();
+    	this.tiledArea = new TiledArea(intersection.getArea(), cp.generateConflictPoints(intersection, true),10);
+    } else {
+    	this.tiledArea = new TiledArea(intersection.getArea(),
                                    config.getGranularity());
+    }
     this.reservationGrid = new ReservationGrid(tiledArea.getXNum(),
                                                tiledArea.getYNum(),
                                                config.getGridTimeStep());
@@ -208,6 +220,26 @@ public class V2IManager extends IntersectionManager
    */
   public void setPolicy(Policy policy) {
     this.policy = policy;
+  }
+  /**
+   * reset reservation grid with padding
+   * @param padding
+   */
+  public void resetReservationGrid(int padding){
+	  if(voronoi){
+	    	ConflictPointGeneratorSimple cp = new ConflictPointGeneratorSimple();
+	    	this.tiledArea = new TiledArea(intersection.getArea(), cp.generateConflictPoints(intersection, true),padding);
+	    } else {
+	    	this.tiledArea = new TiledArea(intersection.getArea(),
+	                                   config.getGranularity());
+	    }
+	    this.reservationGrid = new ReservationGrid(tiledArea.getXNum(),
+	                                               tiledArea.getYNum(),
+	                                               config.getGridTimeStep());
+	    this.reservationGridManager = new ReservationGridManager(config,
+	                                                             intersection,
+	                                                             tiledArea,
+	                                                             reservationGrid);
   }
 
 

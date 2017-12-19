@@ -169,7 +169,7 @@ public class AutoDriverOnlySimulator implements Simulator {
     //simSerialiser.setVinToVehicles(timeStep,vinToVehicles);
     
     
-    //simSerializer = new SimulatorSerializer(this,2502, "192.168.0.2");
+    simSerializer = new SimulatorSerializer(this,2502, "192.168.1.143");
     
     simCreatorConnections = new ArrayList<SimulatorSerializer>();
     
@@ -196,7 +196,7 @@ public class AutoDriverOnlySimulator implements Simulator {
     
     //conflict point test
 	ConflictPointGeneratorSimple test = new ConflictPointGeneratorSimple(this.basicMap);
-	test.generateConflictPoints(this.basicMap.getIntersectionManagers().get(0), 0, true);
+	test.generateConflictPoints(this.basicMap.getIntersectionManagers().get(0).getIntersection(), true);
     
   }
 
@@ -216,11 +216,11 @@ public class AutoDriverOnlySimulator implements Simulator {
 			simConnect.setVinToVehicles(timeStep, vinToVehicles, simConnect.getPath());
 		}
 	}*/
-	/*if(!this.hasRun && !vinToVehicles.isEmpty()){
+	if(!this.hasRun && !vinToVehicles.isEmpty()){
 		//old code
 		this.hasRun = simSerializer.setVinToVehicles(timeStep,vinToVehicles);
 		this.hasRun = true;
-	}*/
+	}
 	
 	for(SimulatorSerializer simConnect : simCreatorConnections){
 		if(!simConnect.isInitialisedNoVehicles() && !vinToVehicles.isEmpty()) {
@@ -992,6 +992,9 @@ public class AutoDriverOnlySimulator implements Simulator {
    */
   private void letIntersectionManagersAct(double timeStep) {
     for(IntersectionManager im : basicMap.getIntersectionManagers()) {
+    	/*if(im instanceof V2IManager ){//&& currentTime >= 3.2 && currentTime <= 3.4){
+    		((V2IManager) im).resetReservationGrid(10);
+    	}*/
       im.act(timeStep);
     }
   }
@@ -1301,7 +1304,7 @@ public class AutoDriverOnlySimulator implements Simulator {
 	  } else if(testScheduleID == 2){
 		  //Straight, right, left, straight
 		  simCreatorConnections.add(new SimulatorSerializer(this,2500, "192.168.0.3",SimulatorSerializer.ODPair.WEST_EAST, bids.get(0),"sim2")); //sim2
-		  simCreatorConnections.add(new SimulatorSerializer(this,2504, "192.168.0.4",SimulatorSerializer.ODPair.SOUTH_EAST, bids.get(1),"sim3")); //sim3
+		  simCreatorConnections.add(new SimulatorSerializer(this,2504, "192.168.1.143",SimulatorSerializer.ODPair.SOUTH_EAST, bids.get(1),"sim3")); //sim3
 		  simCreatorConnections.add(new SimulatorSerializer(this,2506, "192.168.0.5",SimulatorSerializer.ODPair.WEST_NORTH, bids.get(2),"sim4")); //sim4
 		  //simCreatorConnections.add(new SimulatorSerializer(this,2508, "192.168.0.6",SimulatorSerializer.ODPair.NORTH_SOUTH, bids.get(3),"sim5")); //sim5
 	  } else {

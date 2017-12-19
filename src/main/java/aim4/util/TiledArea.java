@@ -195,12 +195,12 @@ public class TiledArea {
     this.rectangualarTiles = true;
     xNum = ((int)(rectangle.getWidth() / xLength)) + 1;
     yNum = ((int)(rectangle.getHeight() / yLength)) + 1;
-    tiles = new Tile[xNum][yNum];
+    tiles = new SquareTile[xNum][yNum];
     idToTiles = new ArrayList<Tile>(xNum*yNum) ;
     createTiles();
     identifyEdgeTiles();
   }
-  public TiledArea(Area area, List<Point2D> points){
+  public TiledArea(Area area, List<Point2D> points,int padding){
 	  this.area = area;
 	  this.rectangle = area.getBounds2D();
 	  this.xLength = rectangle.getWidth()/(points.size() + 1);
@@ -211,7 +211,7 @@ public class TiledArea {
 	  tiles = new PolyTile[xNum][yNum];
 	  idToTiles = new ArrayList<Tile>(xNum*yNum);
 	  tileSetId = 0;
-	  createPolyTiles(points);
+	  createPolyTiles(points, padding);
 	  identifyEdgeTiles();
   }
 
@@ -219,67 +219,49 @@ public class TiledArea {
    * Create the tiles
    */
   private void createTiles() {
-    numberOfTiles = 0;
-    for(int x = 0; x < xNum; x++) {
-      for(int y = 0; y < yNum; y++) {
-        // Create a tile
-        // Start by finding the offset for this particular tile
-        double xOffset = x * xLength;
-        double yOffset = y * yLength;
-        // These should be granularity most of the time, except on the
-        // last row/column
-        double width = Math.min(xLength, rectangle.getWidth() - xOffset);
-        double height = Math.min(yLength, rectangle.getHeight() - yOffset);
-        // Don't forget to offset from the starting coordinates of the
-        // intersection bounding box
-        Rectangle2D tileRect =
-          new Rectangle2D.Double(rectangle.getMinX() + xOffset,
-                                 rectangle.getMinY() + yOffset,
-                                 width, height);
-        // Now that we have a rectangle for the tile, we can figure out
-        // whether it is actually in the area
-        if(area.intersects(tileRect)) {
-          // If it is in the area, let's make a new tile
-          tiles[x][y] = new SquareTile(tileRect, x, y, numberOfTiles);
-          idToTiles.add(tiles[x][y]);
-          numberOfTiles++;
+	  numberOfTiles = 0;
+      for(int x = 0; x < xNum; x++) {
+        for(int y = 0; y < yNum; y++) {
+          // Create a tile
+          // Start by finding the offset for this particular tile
+          double xOffset = x * xLength;
+          double yOffset = y * yLength;
+          // These should be granularity most of the time, except on the
+          // last row/column
+          double width = Math.min(xLength, rectangle.getWidth() - xOffset);
+          double height = Math.min(yLength, rectangle.getHeight() - yOffset);
+          // Don't forget to offset from the starting coordinates of the
+          // intersection bounding box
+          Rectangle2D tileRect =
+            new Rectangle2D.Double(rectangle.getMinX() + xOffset,
+                                   rectangle.getMinY() + yOffset,
+                                   width, height);
+          // Now that we have a rectangle for the tile, we can figure out
+          // whether it is actually in the area
+          if(area.intersects(tileRect)) {
+            // If it is in the area, let's make a new tile
+            tiles[x][y] = new SquareTile(tileRect, x, y, numberOfTiles);
+            idToTiles.add(tiles[x][y]);
+            numberOfTiles++;
+          }
         }
       }
     }
-    }
-    /**
-     * @author Alexander Humphry
-     * Create the tiles with predefined polygons (4 lane road)
-     */
-    private void createPolyTiles(List<Point2D> points){
-  	  numberOfTiles = 0;
-  	  PolyTileStore store = new PolyTileStore();//TODO
-  	  //add all tile definitions here, defined by adding points, points to be added manualy
-  	  
-  	  //TODO
-  	  //check correct operation of code to end of function
-  	  Tile[][] tempTiles = new Tile[xNum][yNum];
-  	  ArrayList<Tile> tempIdToTiles = new ArrayList<Tile>();
-  	  for(PolyTile tile : store.getTiles()){
+  /**
+   * @author Alexander Humphry
+   * Create the tiles with predefined polygons (4 lane road)
+   */
+  private void createPolyTiles(List<Point2D> points, int padding){
+	  numberOfTiles = 0;
+	  PolyTileStore store = new PolyTileStore(padding);//TODO
+	  //add all tile definitions here, defined by adding points, points to be added manualy
+	  for(PolyTile tile : store.getTiles()){
 		  if(tile.getPolygon().intersects(area.getBounds2D())){
-			  tempTiles[tile.getX()][tile.getY()] = tile;
-			  tempIdToTiles.add(tiles[tile.getX()][tile.getY()]);
+			  tiles[tile.getX()][tile.getY()] = tile;
+			  idToTiles.add(tiles[tile.getX()][tile.getY()]);
+			  numberOfTiles++;
 		  }
-  	  }
-  	  tilesStore.add(tempTiles);
-  	  idToTilesStore.add(tempIdToTiles);
-  	  
-  	  
-  	  /*for(PolyTile tile : store.getTiles()){
-  		  if(tile.getPolygon().intersects(area.getBounds2D())){
-  			  tiles[tile.getX()][tile.getY()] = tile;
-  			  idToTiles.add(tiles[tile.getX()][tile.getY()]);
-  			  numberOfTiles++;
-  		  }
-  	  }*/
-  	  tiles = tilesStore.get(tileSetId);
-  	  idToTiles = idToTilesStore.get(tileSetId);
-  	  numberOfTiles = idToTiles.size();
+	  }
   }
 
   /**
@@ -432,7 +414,7 @@ public class TiledArea {
     int firstRow = 0;
     int lastRow = yNum - 1;
     // only use short cut if 
-    if(this.rectangualarTiles){
+    /*
 	    firstColumn =
 	      Math.max(0,
 	               (int)((boundingBox.getMinX() - rectangle.getMinX()) /
@@ -449,26 +431,20 @@ public class TiledArea {
 	      Math.min(yNum - 1,
 	               (int)((boundingBox.getMaxY() - rectangle.getMinY()) /
 	                     yLength));
+	    */
 	    // Now go through all the potential tiles and find the ones that this
 	    // shape intersects
-	    //lastColumn = xNum - 1;
-	    //lastRow = yNum - 1;
+	    lastColumn = xNum - 1;
+	    lastRow = yNum - 1;
 	    for(int c = firstColumn; c <= lastColumn; c++) {
 	      for(int r = firstRow; r <= lastRow; r++) {
 	        // If the tile exists, and it does intersect, add it to the list of
 	        // tiles that are occupied
 	        if(tiles[c][r] != null &&
 	           testIntersection(shape,tiles[c][r].getShape())) {
-	           occupiedTiles.add(tiles[c][r]);
+	          occupiedTiles.add(tiles[c][r]);
 	        }
 	      }
-	    }
-    } else {
-    	for(Tile tile : idToTiles){
-    		if(testIntersection(shape, tile.getShape())){
-    			occupiedTiles.add(tile);
-    		}
-    	}
     }
     return occupiedTiles;
   }
@@ -481,10 +457,7 @@ public class TiledArea {
   public boolean testIntersection(Shape shapeA, Shape shapeb){
 	  Area areaA = new Area(shapeA);
 	  areaA.intersect(new Area(shapeb));
-	  if(areaA.isEmpty()){
-		  return false;
-	  }
-	  return true;
+	  return !areaA.isEmpty();
   }
   /**
    * @author Alexander Humphry
@@ -559,8 +532,8 @@ public class TiledArea {
 	  
 	  private ArrayList<PolyTile> polyTileStore = new ArrayList<PolyTile>();
 	  
-	  public PolyTileStore(){
-		  populateDefault();
+	  public PolyTileStore(int padding){
+		  populateDefault(padding);
 	  }
 	  public PolyTileStore(List<Point2D> points, double minDist){
 		  generateGraph(points, minDist);
@@ -598,12 +571,12 @@ public class TiledArea {
 		  }
 		  return vertices;
 	}
-	public void populateDefault(){
+	public void populateDefault(int padding){
 		  //add tiles manually here
 		  //voronoi code test
 		  Voronoi interVoronoi = new Voronoi(0.5);
 		  //test points location
-		  Vertex[] points = generatePoints(4);
+		  Vertex[] points = generatePoints(4, padding);
 		  
 		  List<GraphEdge> graph= interVoronoi.generateVoronoi(points);
 		  Map<Vertex,Path2D> polygons= interVoronoi.makeVoronoiPolygons(points, graph);
@@ -621,6 +594,7 @@ public class TiledArea {
 		  int i = 0;
 		  Double x;
 		  Double y;
+		  polyTileStore.clear();
 		  for(Vertex polygon : polygonList){
 			  x = polygon.xPos - rectangle.getMinX();
 			  y = polygon.yPos - rectangle.getMinY();
@@ -675,7 +649,7 @@ public class TiledArea {
 	 * used to store the conflict points of the voronoi diagram
 	 * @return
 	 */
-	private Vertex[] generatePoints(int set) {
+	private Vertex[] generatePoints(int set, int padding) {
 		  ArrayList<Vertex> pointsList = new ArrayList<Vertex>();
 		  Vertex point;
 		  //test1
@@ -846,6 +820,8 @@ public class TiledArea {
 			  //point 4
 			  point = generateGridVertex(16.6,16.6,true,true);
 			  pointsList.add(point);
+			  //add other points
+			  pointsList.addAll(generateGridVertecies(padding));
 		  }
 		  
 		  //convert to array
@@ -873,5 +849,20 @@ public class TiledArea {
 			  return new Vertex(rectangle.getMaxX() + x, rectangle.getMaxY() + y);
 		  }
 	  }
+  }
+  private ArrayList<Vertex> generateGridVertecies(int pointsInLimits){
+	  ArrayList<Vertex> vertecies = new ArrayList<Vertex>();
+	  if(pointsInLimits == 0){
+		  return vertecies;
+	  }
+	  double intervalx = (rectangle.getMaxX() - rectangle.getMinX())/(pointsInLimits + 1);
+	  double intervaly = (rectangle.getMaxY() - rectangle.getMinY())/(pointsInLimits + 1);
+	  
+	  for(int i = 0; i < pointsInLimits ; i++){
+		  for(int j = 0; j < pointsInLimits; j++){
+			  vertecies.add(generateGridVertex(intervalx*i,intervaly*j, true, true));
+		  }
+	  }
+	  return vertecies;
   }
 }
