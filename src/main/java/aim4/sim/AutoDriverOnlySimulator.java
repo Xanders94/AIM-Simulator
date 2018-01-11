@@ -412,7 +412,6 @@ public class AutoDriverOnlySimulator implements Simulator {
    * @param timeStep  the time step
    */
   private void spawnVehicles(double timeStep) {
-	  int vanNumber = 0;
 	  SpawnPoint tempSpawnPoint = null;
     for(SpawnPoint spawnPoint : basicMap.getSpawnPoints()) {
       List<SpawnSpec> spawnSpecs = spawnPoint.act(timeStep);
