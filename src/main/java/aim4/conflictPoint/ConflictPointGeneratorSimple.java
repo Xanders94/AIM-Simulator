@@ -244,7 +244,7 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 		
 		//arc and arc intersection
 		
-		results.addAll(getIntersectionArcArc(arcs));
+		results.addAll(getIntersectionArcArc());
 		
 		return results;
 	}
@@ -351,7 +351,7 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 		
 	}
 	//assumes base points at corner of intersection
-	
+	/*
 	private ArrayList<Point2D> getIntersectionArcArc(ArrayList<Arc2D> arcs){
 		// TODO Auto-generated method stub
 		
@@ -404,6 +404,40 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 				}
 			}
 		}
+		
+		return result;
+	}
+	*/
+	/**
+	 * returns arc on arc intersection points based on square intersection with restricted turning
+	 * 
+	 * @return
+	 */
+	private ArrayList<Point2D> getIntersectionArcArc(){
+		ArrayList<Point2D> result = new ArrayList<Point2D>();
+		Rectangle2D intersection = this.inter.getBoundingBox();
+		double x, y;
+		//calculate uppermost point
+		x = (intersection.getMinX() + intersection.getMaxX())/2;
+		y = (intersection.getMaxY() - intersection.getHeight()*(32/115));
+		
+		result.add(new Point2D.Double(x,y));
+		
+		//calculate lower most point
+		y = (intersection.getMinY() + intersection.getHeight()*(32/115));
+		
+		result.add(new Point2D.Double(x,y));
+		
+		//calculate left most point
+		x = (intersection.getMinY() + intersection.getMaxY())/2;
+		y = (intersection.getMinX() + intersection.getWidth()*(32/115));
+		
+		result.add(new Point2D.Double(x,y));
+		
+		//calculate right most point
+		y = (intersection.getMaxX() - intersection.getWidth()*(32/115));
+		
+		result.add(new Point2D.Double(x,y));
 		
 		return result;
 	}
