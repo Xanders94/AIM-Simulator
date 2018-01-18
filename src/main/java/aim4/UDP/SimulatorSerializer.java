@@ -234,9 +234,6 @@ public class SimulatorSerializer {
 		//debug
 		
 		for(VehicleSimView vehicle : sim.getActiveVehicles()){
-			if(sim.getSimulationTime() > 17.21 && sim.getSimulationTime() < 17.4){
-				Debug.setVehicleColor(vehicle.getVIN(), new Color(204,0,204));
-			}
 			vehicles.add(vehicle);
 			if(vehicle.getSpec().getName().equals("VAN")){
 				vanNumber++;
