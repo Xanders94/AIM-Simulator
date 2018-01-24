@@ -329,6 +329,9 @@ public class ReservationGridManager implements
     private List<TimeTile> workingList;
     /** The acceleration profile */
     private Queue<double[]> accelerationProfile;
+    
+    private Lane arrivalLane;
+    private Lane departureLane;
 
     /**
      * Create the plan for the reservation.
@@ -350,6 +353,21 @@ public class ReservationGridManager implements
       this.workingList = workingList;
       this.accelerationProfile = accelerationProfile;
     }
+    public Plan(int vin,
+            double exitTime,
+            double exitVelocity,
+            List<TimeTile> workingList,
+            Queue<double[]> accelerationProfile,
+            Lane arrivalLane,
+            Lane departureLane) {
+	  this.vin = vin;
+	  this.exitTime = exitTime;
+	  this.exitVelocity = exitVelocity;
+	  this.workingList = workingList;
+	  this.accelerationProfile = accelerationProfile;
+	  this.arrivalLane = arrivalLane;
+	  this.departureLane = departureLane;
+}
 
     /**
      * Get the VIN of the vehicle.
@@ -394,6 +412,12 @@ public class ReservationGridManager implements
      */
     public Queue<double[]> getAccelerationProfile() {
       return accelerationProfile;
+    }
+    public Lane getArrivalLane(){
+    	return arrivalLane;
+    }
+    public Lane getDepartureLane(){
+    	return departureLane;
     }
   }
 
@@ -453,6 +477,107 @@ public class ReservationGridManager implements
       }
     }
 
+  }
+  //TODO
+  public class PlanStore{
+	  /**
+	   * The vehicle spec that the plans are attached to
+	   */
+	  public VehicleSpec vehicle;
+	  /**
+	   * List of Plans created for the vehicle specification
+	   */
+	  public ArrayList<Plan> plans;
+	  
+	  /**
+	   * create a set of generic vehicle plans
+	   * @param vehicleSpec
+	   */
+	  public PlanStore(VehicleSpec vehicleSpec){
+		  vehicle = vehicleSpec;
+		  plans = generatePlans(vehicle);
+	  }
+	/**
+	 * generate a set of generic plans for this vehicle on this intersection
+	 * @param vehicle
+	 * @return
+	 */
+	private ArrayList<Plan> generatePlans(VehicleSpec vehicle) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	/**
+	 * retrieves a plan based on an arrival and departure lane id
+	 * @param arrivalLaneId
+	 * @param departureLaneId
+	 * @return
+	 */
+	private Plan getPlan(int arrivalLaneId, int departureLaneId){
+		//TODO Auto-generated method stub
+		for(Plan plan : plans){
+			if(plan.getArrivalLane().getId() == arrivalLaneId && plan.getDepartureLane().getId() == departureLaneId){
+				return plan;
+			}
+		}
+		return null;
+	}
+	/**
+	   * Compute the acceleration profile.
+	   *
+	   * @param arrivalTime      the arrival time of the vehicle
+	   * @param arrivalVelocity  the arrival velocity of the vehicle
+	   * @param exitTime         the time at which the vehicle exits the
+	   *                         intersection
+	   * @param accelerating  whether or not to setMaxAccelWithMaxTargetVelocity to maximum velocity
+	   *                      during the traversal
+	   *
+	   * @return  a sequence of acceleration pair (acceleration, duration)
+	   */
+	  private Queue<double[]> calcAccelerationProfile(double arrivalTime,
+	                                                  double arrivalVelocity,
+	                                                  double exitTime,
+	                                                  boolean accelerating) {
+	    // Calculate the accelerations
+	    Queue<double[]> accelerationProfile = new LinkedList<double[]>();
+	    // Figure out how long we took to traverse the intersection
+	    double traversalTime = exitTime - arrivalTime;
+	    if (traversalTime <= 0.0) {
+	      System.err.printf("traversalTime = %.10f\n", traversalTime);
+	    }
+	    assert traversalTime > 0.0;
+	    if (accelerating && (vehicle.getMaxVelocity() > arrivalVelocity)) {
+	      // How much of the time did we spend accelerating
+	      double accelerationDuration =
+	        Math.min(traversalTime, (vehicle.getMaxVelocity()-arrivalVelocity)/vehicle.getMaxAcceleration());
+	      // Add in the time spent accelerating, if any
+	      assert accelerationDuration > 0.0;
+	      accelerationProfile.add(
+	        new double[] { vehicle.getMaxAcceleration(), accelerationDuration });
+	      // Fill the remaining time with constant speed, if any remains
+	      if(accelerationDuration < traversalTime) {
+	        accelerationProfile.add(
+	          new double[] { 0.0, traversalTime - accelerationDuration });
+	      }
+	    } else {  // Fixed speed reservation
+	      // Just add in the time we crossed, all at constant speed
+	      accelerationProfile.add(new double[] { 0.0, traversalTime });
+	    }
+	    return accelerationProfile;
+	  }
+	
+	public Plan retrieveCurrentPlan(int arrivalLaneId, int departureLaneId, double arrivalTime, double departureTime, double arrivalVelocity){
+		//TODO
+		Plan basePlan = getPlan(arrivalLaneId, departureLaneId);
+		/*for(TimeTile timeTile : basePlan.getWorkingList()){
+			timeTile.getTime()
+		}*/
+		
+		return null;
+	}
+	
+	public VehicleSpec getVehicleSpec(){
+		return vehicle;
+	}
   }
 
 
@@ -551,6 +676,8 @@ public class ReservationGridManager implements
     this.tiledArea = tiledArea;
     this.reservationGrid = reservationGrid;
     this.statCollector = new VinHistoryStatCollector();
+    
+    //TODO insert calculation function for 
   }
 
 
@@ -658,7 +785,9 @@ public class ReservationGridManager implements
                       exitTime,
                       testVehicle.gaugeVelocity(),
                       workingList,
-                      accelerationProfile);
+                      accelerationProfile,
+                      arrivalLane,
+                      departureLane);
     } else {
       return null;
     }
@@ -830,6 +959,7 @@ public class ReservationGridManager implements
           buffer = internalTileTimeBufferSteps;
         }
         int tileId = tile.getId();
+        //TODO A.H - take time from here
         for(int t = currentIntTime - buffer; t <= currentIntTime + buffer; t++){
           // If the tile is already reserved and it isn't by us, we've failed
           if (!reservationGrid.isReserved(t, tileId)) {
