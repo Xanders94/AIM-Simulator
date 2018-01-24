@@ -514,7 +514,8 @@ public final class BasePolicy implements Policy, ExtendedBasePolicyCallback {
     ReservationGridManager.Plan gridPlan = null;
     AczManager aczManager = null;
     AczManager.Plan aczPlan = null;
-
+    //A.H - replace this section with tie in for pre-calculated tile sequences
+    //A.H - look at replacing sections of the ReservationGridManager query mechanism
     for(Request.Proposal proposal : proposals) {
       ReservationGridManager.Query gridQuery =
         new ReservationGridManager.Query(vin,
@@ -526,11 +527,12 @@ public final class BasePolicy implements Policy, ExtendedBasePolicyCallback {
                                          proposal.getMaximumTurnVelocity(),
                                          true);
       gridPlan = im.getReservationGridManager().query(gridQuery);
+      //A.H - end tie in section
       if (gridPlan != null) {
         double stopDist =
           VehicleUtil.calcDistanceToStop(gridPlan.getExitVelocity(),
                                          msg.getSpec().getMaxDeceleration());
-
+        
         aczManager = im.getAczManager(proposal.getDepartureLaneID());
         if (aczManager == null) {
           System.err.printf("FCFSPolicy::processRequestMsg(): " +

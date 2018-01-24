@@ -620,6 +620,7 @@ public class ReservationGridManager implements
       Debug.currentMap.getLaneRegistry().get(q.getDepartureLaneId());
 
     // Create a test vehicle to use in the internal simulation
+    // A.H - modify spawn spec for vehicles with tile sequences at start 
     BasicAutoVehicle testVehicle =
       createTestVehicle(q.getSpec(),
                         q.getArrivalVelocity(),
@@ -633,6 +634,7 @@ public class ReservationGridManager implements
     // testVehicle.setDriver(dummy);  // TODO fix this later.
 
     // Keep track of the TileTimes that will make up this reservation
+    // A.H - take precalculated time tiles and fill in ref times, return
     FindTileTimesBySimulationResult fResult
       = findTileTimesBySimulation(testVehicle,
                                   dummy,
