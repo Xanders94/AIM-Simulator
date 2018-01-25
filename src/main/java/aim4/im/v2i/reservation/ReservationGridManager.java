@@ -57,6 +57,7 @@ import aim4.util.TiledArea;
 import aim4.util.TiledArea.Tile;
 import aim4.vehicle.BasicAutoVehicle;
 import aim4.vehicle.VehicleSpec;
+import aim4.vehicle.VehicleSpecDatabase;
 import aim4.vehicle.VehicleUtil;
 
 /**
@@ -485,26 +486,47 @@ public class ReservationGridManager implements
 	   */
 	  public VehicleSpec vehicle;
 	  /**
+	   * The reference to the creating reservation grid manager
+	   */
+	  public ReservationGridManager gridMgmt;
+	  /**
 	   * List of Plans created for the vehicle specification
 	   */
 	  public ArrayList<Plan> plans;
 	  
+	  public ArrayList<Query> queries;
+	  
 	  /**
 	   * create a set of generic vehicle plans
 	   * @param vehicleSpec
+	 * @param reservationGridManager 
 	   */
-	  public PlanStore(VehicleSpec vehicleSpec){
+	  public PlanStore(VehicleSpec vehicleSpec, ReservationGridManager reservationGridManager){
 		  vehicle = vehicleSpec;
-		  plans = generatePlans(vehicle);
+		  gridMgmt = reservationGridManager;
+		  plans = new ArrayList<Plan>();
+		  queries = new ArrayList<Query>();
+		  generatePlans();
 	  }
 	/**
 	 * generate a set of generic plans for this vehicle on this intersection
-	 * @param vehicle
-	 * @return
 	 */
-	private ArrayList<Plan> generatePlans(VehicleSpec vehicle) {
-		// TODO Auto-generated method stub
-		return null;
+	private void generatePlans() {
+		//TODO generate plans for vehicle
+		double currentTime = gridMgmt.currentTime;
+		double maxVelocity = this.vehicle.getMaxVelocity();
+		VehicleSpecForRequestMsg testVehicle = new VehicleSpecForRequestMsg(vehicle);
+		Query q;
+		List<Lane> enter = gridMgmt.intersection.getEntryLanes();
+		List<Lane> exit = gridMgmt.intersection.getExitLanes();
+		for(Lane entryLane : enter){
+			for(Lane exitLane : exit){
+				//check if lane pair is valid
+				q = new ReservationGridManager.Query(0, currentTime, maxVelocity, entryLane.getId(), exitLane.getId(), testVehicle, maxVelocity, false);
+				queries.add(q);
+				plans.add(gridMgmt.query(q));
+			}
+		}
 	}
 	/**
 	 * retrieves a plan based on an arrival and departure lane id
@@ -628,6 +650,11 @@ public class ReservationGridManager implements
    * The statistic collector
    */
   private StatCollector<ReservationGridManager> statCollector;
+  
+  /**
+   * a collection of pre made reservation plans for different vehicles on this reservation grid
+   */
+  private ArrayList<PlanStore> preMadePlans;
 
 
   /////////////////////////////////
@@ -678,6 +705,10 @@ public class ReservationGridManager implements
     this.statCollector = new VinHistoryStatCollector();
     
     //TODO insert calculation function for 
+    preMadePlans = new ArrayList<PlanStore>();
+    for(int i = 0; i < VehicleSpecDatabase.getNumOfSpec(); i++){
+    	preMadePlans.add(new PlanStore(VehicleSpecDatabase.getVehicleSpecById(i), this));
+    }
   }
 
 
@@ -739,7 +770,6 @@ public class ReservationGridManager implements
    */
   @Override
   public Plan query(Query q) {
-
     // Position the Vehicle to be ready to start the simulation
     Lane arrivalLane =
       Debug.currentMap.getLaneRegistry().get(q.getArrivalLaneId());
@@ -832,7 +862,6 @@ public class ReservationGridManager implements
                                           double arrivalVelocity,
                                           double maxVelocity,
                                           Lane arrivalLane) {
-
     VehicleSpec newSpec = new VehicleSpec(
         "TestVehicle",
         spec.getMaxAcceleration(),
@@ -938,7 +967,7 @@ public class ReservationGridManager implements
     int currentIntTime = reservationGrid.calcDiscreteTime(arrivalTime);
     // The duration in the current time interval
     double currentDuration = reservationGrid.calcRemainingTime(arrivalTime);
-
+    
     // drive the test vehicle until it leaves the intersection
     while(VehicleUtil.intersects(testVehicle, areaPlus)) {
       moveTestVehicle(testVehicle, dummy, currentDuration, accelerating);

@@ -177,7 +177,7 @@ public class V2IManager extends IntersectionManager
     this.intersection = intersection;
     this.config = config;
     // Set up the reservation grid
-    this.voronoi = true; //TODO debug
+    this.voronoi = false; //TODO debug
     if(voronoi){
     	ConflictPointGeneratorSimple cp = new ConflictPointGeneratorSimple();
     	this.tiledArea = new TiledArea(intersection.getArea(), cp.generateConflictPoints(intersection, true),10);

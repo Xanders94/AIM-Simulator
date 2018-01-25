@@ -414,7 +414,7 @@ public class TiledArea {
     int firstRow = 0;
     int lastRow = yNum - 1;
     // only use short cut if 
-    /*
+    
 	    firstColumn =
 	      Math.max(0,
 	               (int)((boundingBox.getMinX() - rectangle.getMinX()) /
@@ -431,7 +431,7 @@ public class TiledArea {
 	      Math.min(yNum - 1,
 	               (int)((boundingBox.getMaxY() - rectangle.getMinY()) /
 	                     yLength));
-	    */
+	    
 	    // Now go through all the potential tiles and find the ones that this
 	    // shape intersects
 	    lastColumn = xNum - 1;
