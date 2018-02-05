@@ -49,6 +49,7 @@ import aim4.driver.CrashTestDummy;
 import aim4.driver.Driver;
 import aim4.im.Intersection;
 import aim4.im.v2i.reservation.ReservationGrid.TimeTile;
+import aim4.map.Road;
 import aim4.map.lane.Lane;
 import aim4.msg.v2i.Request;
 import aim4.msg.v2i.Request.VehicleSpecForRequestMsg;
@@ -333,6 +334,8 @@ public class ReservationGridManager implements
     
     private Lane arrivalLane;
     private Lane departureLane;
+	private double entryTime;
+	private ReservationGridManager gridMgmt;
 
     /**
      * Create the plan for the reservation.
@@ -356,18 +359,22 @@ public class ReservationGridManager implements
     }
     public Plan(int vin,
             double exitTime,
+            double entryTime,
             double exitVelocity,
             List<TimeTile> workingList,
             Queue<double[]> accelerationProfile,
             Lane arrivalLane,
-            Lane departureLane) {
+            Lane departureLane,
+            ReservationGridManager gridMgmt) {
 	  this.vin = vin;
 	  this.exitTime = exitTime;
+	  this.entryTime = entryTime;
 	  this.exitVelocity = exitVelocity;
 	  this.workingList = workingList;
 	  this.accelerationProfile = accelerationProfile;
 	  this.arrivalLane = arrivalLane;
 	  this.departureLane = departureLane;
+	  this.gridMgmt = gridMgmt;
 }
 
     /**
@@ -420,6 +427,23 @@ public class ReservationGridManager implements
     public Lane getDepartureLane(){
     	return departureLane;
     }
+	public Plan getNewPlan(double arrivalTime, double departureTime,
+			double arrivalVelocity, int vin) {
+		// TODO Auto-generated method stub
+		double originalTime = this.exitTime - this.entryTime;
+		double newTime = departureTime - arrivalTime;
+		double timeRatio = newTime/originalTime;
+		List<TimeTile> newWorkingList = new ArrayList<TimeTile>();
+		Double tempTime;
+		Double tempAdditive;
+		for(TimeTile tile : this.workingList){
+			tempTime = tile.getTime() - this.entryTime + arrivalTime;
+			tempAdditive = (tempTime - arrivalTime) * timeRatio;
+			tempTime = arrivalTime + tempAdditive;
+			newWorkingList.add(gridMgmt.reservationGrid.new TimeTile(tempTime.intValue(),tile.getTileId()));
+		}
+		return new Plan(vin, departureTime, arrivalTime, exitVelocity, newWorkingList, accelerationProfile, arrivalLane, arrivalLane, gridMgmt);
+	}
   }
 
   /**
@@ -517,16 +541,70 @@ public class ReservationGridManager implements
 		double maxVelocity = this.vehicle.getMaxVelocity();
 		VehicleSpecForRequestMsg testVehicle = new VehicleSpecForRequestMsg(vehicle);
 		Query q;
-		List<Lane> enter = gridMgmt.intersection.getEntryLanes();
-		List<Lane> exit = gridMgmt.intersection.getExitLanes();
-		for(Lane entryLane : enter){
-			for(Lane exitLane : exit){
-				//check if lane pair is valid
-				q = new ReservationGridManager.Query(0, currentTime, maxVelocity, entryLane.getId(), exitLane.getId(), testVehicle, maxVelocity, false);
-				queries.add(q);
-				plans.add(gridMgmt.query(q));
+		List<Road> entryRoads = gridMgmt.intersection.getEntryRoads();
+		List<Road> exitRoads = gridMgmt.intersection.getExitRoads();
+		int turnCode = 3;
+		for(Road entryRoad : entryRoads){
+			for(Lane entryLane : entryRoad.getLanes()){
+				//set turn code
+				if(entryLane == entryRoad.getIndexLane()){
+					turnCode = 3;
+				} else if(entryLane == entryRoad.getLanes().get(entryRoad.getLanes().size() - 1)){
+					turnCode = 1;
+				} else {
+					turnCode = 2;
+				}
+				for(Road exitRoad : exitRoads){
+					if(entryRoad.getDual() == exitRoad) continue;
+					for(Lane exitLane : exitRoad.getLanes()){
+						//check if lane pair is valid
+						if(!CorrectTurn(entryRoad,exitRoad,turnCode)) continue;
+						
+						q = new ReservationGridManager.Query(0, currentTime, maxVelocity, entryLane.getId(), exitLane.getId(), testVehicle, maxVelocity, false);
+						queries.add(q);
+						plans.add(gridMgmt.query(q));
+					}
+				}
 			}
 		}
+	}
+	private boolean CorrectTurn(Road entry, Road exit, int turnCode){
+		//Codes
+		//0 = only right
+		//1 = right and straight
+		//2 = straight only
+		//3 = left and straight
+		//4 = only left
+		
+		//seperate entry and exit directions
+		String entryDir = entry.getName().substring(entry.getName().length() - 1);
+		String exitDir = exit.getName().substring(exit.getName().length() - 1);
+		
+		if(entryDir.equals("N")){
+			if(exitDir.equals("W") && turnCode < 3) return true; //right and straight
+			else if(exitDir.equals("E") && turnCode > 1) return true; // left and straight
+			else if(exitDir.equals("N") && turnCode == 1 || turnCode == 2 || turnCode == 3) return true;
+			else return false;
+		}
+		if(entryDir.equals("S")){
+			if(exitDir.equals("E") && turnCode < 3) return true;
+			else if(exitDir.equals("W") && turnCode > 1) return true;
+			else if(exitDir.equals("S") && turnCode == 1 || turnCode == 2 || turnCode == 3) return true;
+			else return false;
+		}
+		if(entryDir.equals("E")){
+			if(exitDir.equals("N") && turnCode < 3) return true;
+			else if(exitDir.equals("S") && turnCode > 1) return true;
+			else if(exitDir.equals("E") && turnCode == 1 || turnCode == 2 || turnCode == 3) return true;
+			else return false;
+		}
+		if(entryDir.equals("W")){
+			if(exitDir.equals("S") && turnCode < 3) return true;
+			else if(exitDir.equals("N") && turnCode > 1) return true;
+			else if(exitDir.equals("W") && turnCode == 1 || turnCode == 2 || turnCode == 3) return true;
+			else return false;
+		}
+		return false;
 	}
 	/**
 	 * retrieves a plan based on an arrival and departure lane id
@@ -587,16 +665,12 @@ public class ReservationGridManager implements
 	    return accelerationProfile;
 	  }
 	
-	public Plan retrieveCurrentPlan(int arrivalLaneId, int departureLaneId, double arrivalTime, double departureTime, double arrivalVelocity){
+	public Plan retrieveCurrentPlan(int vin, int arrivalLaneId, int departureLaneId, double arrivalTime, double departureTime, double arrivalVelocity){
 		//TODO
 		Plan basePlan = getPlan(arrivalLaneId, departureLaneId);
-		/*for(TimeTile timeTile : basePlan.getWorkingList()){
-			timeTile.getTime()
-		}*/
 		
-		return null;
+		return basePlan.getNewPlan(arrivalTime,departureTime,arrivalVelocity,vin);
 	}
-	
 	public VehicleSpec getVehicleSpec(){
 		return vehicle;
 	}
@@ -813,11 +887,13 @@ public class ReservationGridManager implements
 
       return new Plan(q.getVin(),
                       exitTime,
+                      q.getArrivalTime(),
                       testVehicle.gaugeVelocity(),
                       workingList,
                       accelerationProfile,
                       arrivalLane,
-                      departureLane);
+                      departureLane,
+                      this);
     } else {
       return null;
     }
