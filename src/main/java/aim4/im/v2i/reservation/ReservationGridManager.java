@@ -428,8 +428,7 @@ public class ReservationGridManager implements
     	return departureLane;
     }
 	public Plan getNewPlan(double arrivalTime,
-			double arrivalVelocity, int vin) {
-		// TODO Auto-generated method stub
+			double arrivalVelocity, int vin, boolean isAccelerating) {
 		double originalTime = this.exitTime - this.entryTime;
 		double originalVelocity = this.exitVelocity;
 		double timeRatio = originalVelocity/arrivalVelocity;
@@ -438,7 +437,7 @@ public class ReservationGridManager implements
 		Double departureTime = 0.0;
 		Double newTime = 0.0;
 		for(TimeTile tile : this.workingList){
-			//get time tile descrete time and convert to current time
+			//get time tile discrete time and convert to current time
 			tempTime = tile.getDiscreteTime();
 			newTime = ((originalVelocity * tempTime) / arrivalVelocity) + gridMgmt.reservationGrid.calcDiscreteTime(arrivalTime);
 			//if already reserved, return null
@@ -672,11 +671,11 @@ public class ReservationGridManager implements
 	    return accelerationProfile;
 	  }
 	
-	public Plan retrieveCurrentPlan(int vin, int arrivalLaneId, int departureLaneId, double arrivalTime, double arrivalVelocity){
+	public Plan retrieveCurrentPlan(int vin, int arrivalLaneId, int departureLaneId, double arrivalTime, double arrivalVelocity, boolean isAccelerating){
 		//TODO
 		Plan basePlan = getPlan(arrivalLaneId, departureLaneId);
 		
-		return basePlan.getNewPlan(arrivalTime,arrivalVelocity,vin);
+		return basePlan.getNewPlan(arrivalTime, arrivalVelocity, vin, isAccelerating);
 	}
 	public VehicleSpec getVehicleSpec(){
 		return vehicle;
@@ -881,7 +880,7 @@ public class ReservationGridManager implements
                                   q.isAccelerating());
     } else {
     	//TODO build in ability to accelerate
-    	FindTileTimesBySimulationResult fResult1 = this.getPlanStore(q.getVin(),q.getSpec(),q.getArrivalTime(),arrivalLane,departureLane,q.getArrivalVelocity());
+    	FindTileTimesBySimulationResult fResult1 = this.getPlanStore(q.getVin(),q.getSpec(),q.getArrivalTime(),arrivalLane,departureLane,q.getArrivalVelocity(), q.isAccelerating());
     	fResult  = findTileTimesBySimulation(testVehicle,
                 dummy,
                 q.getArrivalTime(),
@@ -916,7 +915,7 @@ public class ReservationGridManager implements
   }
 
   private FindTileTimesBySimulationResult getPlanStore(int vin, VehicleSpecForRequestMsg spec, double arrivalTime, Lane arrivalLane,
-		Lane departureLane, double arrivalVelocity) {
+		Lane departureLane, double arrivalVelocity, boolean isAccelerating) {
 	PlanStore protoPlan = null;
 	for(PlanStore plan : this.preMadePlans){
 		if(plan.vehicle.getName().equals(spec.getName())){
@@ -928,10 +927,9 @@ public class ReservationGridManager implements
 	if(protoPlan == null){
 		return null;
 	}
-	protoPlan.retrieveCurrentPlan(vin, arrivalLane.getId(), departureLane.getId(), arrivalTime, arrivalVelocity);
 	FindTileTimesBySimulationResult result = new FindTileTimesBySimulationResult(
 			protoPlan.retrieveCurrentPlan(vin, arrivalLane.getId(), departureLane.getId()
-					, arrivalTime, arrivalVelocity).getWorkingList()
+					, arrivalTime, arrivalVelocity, isAccelerating).getWorkingList()
 					, arrivalVelocity);
 	return result;
 }
