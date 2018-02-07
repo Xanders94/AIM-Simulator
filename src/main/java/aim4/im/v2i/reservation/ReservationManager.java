@@ -43,9 +43,10 @@ public interface ReservationManager<Query,Plan,Ticket> {
    * Make a query.
    *
    * @param q  the query
+   * @param i  denotes whether this method is runing at the start of the program
    * @return the plan generated to achieve the query; null if no plan is found.
    */
-  Plan query(Query q);
+  Plan query(Query q, boolean i);
 
 
   /**

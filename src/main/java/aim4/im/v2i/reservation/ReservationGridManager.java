@@ -427,20 +427,27 @@ public class ReservationGridManager implements
     public Lane getDepartureLane(){
     	return departureLane;
     }
-	public Plan getNewPlan(double arrivalTime, double departureTime,
+	public Plan getNewPlan(double arrivalTime,
 			double arrivalVelocity, int vin) {
 		// TODO Auto-generated method stub
 		double originalTime = this.exitTime - this.entryTime;
-		double newTime = departureTime - arrivalTime;
-		double timeRatio = newTime/originalTime;
+		double originalVelocity = this.exitVelocity;
+		double timeRatio = originalVelocity/arrivalVelocity;
 		List<TimeTile> newWorkingList = new ArrayList<TimeTile>();
-		Double tempTime;
-		Double tempAdditive;
+		int tempTime;
+		Double departureTime = 0.0;
+		Double newTime = 0.0;
 		for(TimeTile tile : this.workingList){
-			tempTime = tile.getTime() - this.entryTime + arrivalTime;
-			tempAdditive = (tempTime - arrivalTime) * timeRatio;
-			tempTime = arrivalTime + tempAdditive;
-			newWorkingList.add(gridMgmt.reservationGrid.new TimeTile(tempTime.intValue(),tile.getTileId()));
+			//get time tile descrete time and convert to current time
+			tempTime = tile.getDiscreteTime();
+			newTime = ((originalVelocity * tempTime) / arrivalVelocity) + gridMgmt.reservationGrid.calcDiscreteTime(arrivalTime);
+			//if already reserved, return null
+			if(gridMgmt.reservationGrid.isReserved(tempTime,tile.getTileId())) return null;
+			//else add to working list
+			newWorkingList.add(gridMgmt.reservationGrid.new TimeTile(tile.getTileId(),newTime.intValue()));
+			/*if(tempTime > departureTime){
+				departureTime = tempTime;
+			}*/
 		}
 		return new Plan(vin, departureTime, arrivalTime, exitVelocity, newWorkingList, accelerationProfile, arrivalLane, arrivalLane, gridMgmt);
 	}
@@ -558,11 +565,11 @@ public class ReservationGridManager implements
 					if(entryRoad.getDual() == exitRoad) continue;
 					for(Lane exitLane : exitRoad.getLanes()){
 						//check if lane pair is valid
-						if(!CorrectTurn(entryRoad,exitRoad,turnCode)) continue;
+						//if(!CorrectTurn(entryRoad,exitRoad,turnCode)) continue;
 						
 						q = new ReservationGridManager.Query(0, currentTime, maxVelocity, entryLane.getId(), exitLane.getId(), testVehicle, maxVelocity, false);
 						queries.add(q);
-						plans.add(gridMgmt.query(q));
+						plans.add(gridMgmt.query(q,true));
 					}
 				}
 			}
@@ -665,11 +672,11 @@ public class ReservationGridManager implements
 	    return accelerationProfile;
 	  }
 	
-	public Plan retrieveCurrentPlan(int vin, int arrivalLaneId, int departureLaneId, double arrivalTime, double departureTime, double arrivalVelocity){
+	public Plan retrieveCurrentPlan(int vin, int arrivalLaneId, int departureLaneId, double arrivalTime, double arrivalVelocity){
 		//TODO
 		Plan basePlan = getPlan(arrivalLaneId, departureLaneId);
 		
-		return basePlan.getNewPlan(arrivalTime,departureTime,arrivalVelocity,vin);
+		return basePlan.getNewPlan(arrivalTime,arrivalVelocity,vin);
 	}
 	public VehicleSpec getVehicleSpec(){
 		return vehicle;
@@ -843,7 +850,7 @@ public class ReservationGridManager implements
    *         successful; otherwise return null.
    */
   @Override
-  public Plan query(Query q) {
+  public Plan query(Query q, boolean i) {
     // Position the Vehicle to be ready to start the simulation
     Lane arrivalLane =
       Debug.currentMap.getLaneRegistry().get(q.getArrivalLaneId());
@@ -866,12 +873,21 @@ public class ReservationGridManager implements
 
     // Keep track of the TileTimes that will make up this reservation
     // A.H - take precalculated time tiles and fill in ref times, return
-    FindTileTimesBySimulationResult fResult
-      = findTileTimesBySimulation(testVehicle,
+    FindTileTimesBySimulationResult fResult = null;
+    if(i && true){
+    	fResult  = findTileTimesBySimulation(testVehicle,
                                   dummy,
                                   q.getArrivalTime(),
                                   q.isAccelerating());
-
+    } else {
+    	//TODO build in ability to accelerate
+    	FindTileTimesBySimulationResult fResult1 = this.getPlanStore(q.getVin(),q.getSpec(),q.getArrivalTime(),arrivalLane,departureLane,q.getArrivalVelocity());
+    	fResult  = findTileTimesBySimulation(testVehicle,
+                dummy,
+                q.getArrivalTime(),
+                q.isAccelerating());
+    	fResult1.getExitTime();
+    }
     if (fResult != null) {
       List<TimeTile> workingList = fResult.getWorkingList();
 
@@ -899,7 +915,28 @@ public class ReservationGridManager implements
     }
   }
 
-  /**
+  private FindTileTimesBySimulationResult getPlanStore(int vin, VehicleSpecForRequestMsg spec, double arrivalTime, Lane arrivalLane,
+		Lane departureLane, double arrivalVelocity) {
+	PlanStore protoPlan = null;
+	for(PlanStore plan : this.preMadePlans){
+		if(plan.vehicle.getName().equals(spec.getName())){
+			protoPlan = plan;
+		}
+	}
+	// if no spec available, return null
+	// in future, add spec to plan generator queue at this if then return null
+	if(protoPlan == null){
+		return null;
+	}
+	protoPlan.retrieveCurrentPlan(vin, arrivalLane.getId(), departureLane.getId(), arrivalTime, arrivalVelocity);
+	FindTileTimesBySimulationResult result = new FindTileTimesBySimulationResult(
+			protoPlan.retrieveCurrentPlan(vin, arrivalLane.getId(), departureLane.getId()
+					, arrivalTime, arrivalVelocity).getWorkingList()
+					, arrivalVelocity);
+	return result;
+}
+
+/**
    * {@inheritDoc}
    */
   @Override
@@ -1040,6 +1077,7 @@ public class ReservationGridManager implements
 
     // A discrete representation of the time throughout the internal simulation
     // Notice that currentIntTime != arrivalTime
+    //TODO use this for descrete time
     int currentIntTime = reservationGrid.calcDiscreteTime(arrivalTime);
     // The duration in the current time interval
     double currentDuration = reservationGrid.calcRemainingTime(arrivalTime);

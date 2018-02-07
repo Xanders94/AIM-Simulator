@@ -69,7 +69,7 @@ public class ReservationGrid extends ReservationArray {
       super(dt, tid);
     }
 
-    /**
+	/**
      * Get the time of this time tile.
      *
      * @return the time of this time tile

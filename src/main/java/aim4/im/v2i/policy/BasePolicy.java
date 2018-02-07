@@ -526,7 +526,7 @@ public final class BasePolicy implements Policy, ExtendedBasePolicyCallback {
                                          msg.getSpec(),
                                          proposal.getMaximumTurnVelocity(),
                                          true);
-      gridPlan = im.getReservationGridManager().query(gridQuery);
+      gridPlan = im.getReservationGridManager().query(gridQuery,false);
       //A.H - end tie in section
       if (gridPlan != null) {
         double stopDist =
@@ -547,7 +547,7 @@ public final class BasePolicy implements Policy, ExtendedBasePolicyCallback {
                                  gridPlan.getExitVelocity(),
                                  msg.getSpec().getLength(),
                                  stopDist);
-          aczPlan = aczManager.query(aczQuery);
+          aczPlan = aczManager.query(aczQuery,false);
           if (aczPlan != null) {
             successfulProposal = proposal;  // reservation succeeds!
             break;

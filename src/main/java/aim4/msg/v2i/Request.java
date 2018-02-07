@@ -268,6 +268,8 @@ public class Request extends V2IMessage {
      * second.
      */
     private double maxTurnPerSecond;
+    
+    private String name;
 
     // ///////////////////////////////
     // CONSTRUCTORS
@@ -286,10 +288,11 @@ public class Request extends V2IMessage {
      * @param maxSteeringAngle       the maximum steering angle
      * @param maxTurnPerSecond       the maximum turn per second
      */
-    public VehicleSpecForRequestMsg(double maxAcceleration, double maxDeceleration,
+    public VehicleSpecForRequestMsg(String name, double maxAcceleration, double maxDeceleration,
         double minVelocity, double length, double width,
         double frontAxleDisplacement, double rearAxleDisplacement,
         double maxSteeringAngle, double maxTurnPerSecond) {
+      this.name = name;
       this.maxAcceleration = maxAcceleration;
       this.maxDeceleration = maxDeceleration;
       this.minVelocity = minVelocity;
@@ -307,6 +310,7 @@ public class Request extends V2IMessage {
      * @param vspec  the vehicle specification
      */
     public VehicleSpecForRequestMsg(VehicleSpec vspec) {
+      this.name = vspec.getName();
       this.maxAcceleration = vspec.getMaxAcceleration();
       this.maxDeceleration = vspec.getMaxDeceleration();
       this.minVelocity = vspec.getMinVelocity();
@@ -324,6 +328,7 @@ public class Request extends V2IMessage {
      * @param spec  the vehicle specification
      */
     public VehicleSpecForRequestMsg(VehicleSpecForRequestMsg spec) {
+      this.name = spec.name;
       this.maxAcceleration = spec.maxAcceleration;
       this.maxDeceleration = spec.maxDeceleration;
       this.minVelocity = spec.minVelocity;
@@ -401,6 +406,10 @@ public class Request extends V2IMessage {
     public double getMaxTurnPerSecond() {
       return maxTurnPerSecond;
     }
+
+	public Object getName() {
+		return name;
+	}
 
   }
 

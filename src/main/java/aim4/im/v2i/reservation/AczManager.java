@@ -200,7 +200,7 @@ public class AczManager implements
    * {@inheritDoc}
    */
   @Override
-  public Plan query(Query q) {
+  public Plan query(Query q, boolean i) {
     if (acz.isAdmissible(q.getVin(),
                          q.getVehicleLength(),
                          q.getStopDist())) {

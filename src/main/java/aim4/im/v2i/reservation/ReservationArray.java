@@ -85,7 +85,7 @@ public class ReservationArray {
       this.tid = tid;
     }
 
-    /**
+	/**
      * Get the tile ID.
      * @return  the tile ID.
      */
