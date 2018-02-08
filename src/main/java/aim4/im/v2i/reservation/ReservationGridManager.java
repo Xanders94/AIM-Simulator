@@ -427,19 +427,29 @@ public class ReservationGridManager implements
     public Lane getDepartureLane(){
     	return departureLane;
     }
-	public Plan getNewPlan(double arrivalTime,
+	public Plan getNewPlan(VehicleSpec vehicle, double arrivalTime,
 			double arrivalVelocity, int vin, boolean isAccelerating) {
-		double originalTime = this.exitTime - this.entryTime;
+		//retrieving old plan parameters
 		double originalVelocity = this.exitVelocity;
-		double timeRatio = originalVelocity/arrivalVelocity;
+		//retrieving vehicle parameters
+		double maxVel = vehicle.getMaxVelocity();
+		double maxAcc = vehicle.getMaxAcceleration() * gridMgmt.reservationGrid.getGridTimeStep();
+		//initialization
 		List<TimeTile> newWorkingList = new ArrayList<TimeTile>();
 		int tempTime;
 		Double departureTime = 0.0;
 		Double newTime = 0.0;
+		TimeTile lastTile = null;
+		double accelFactor = originalVelocity / arrivalVelocity;
+		double lastVelocity = arrivalVelocity;
+		
 		for(TimeTile tile : this.workingList){
 			//get time tile discrete time and convert to current time
 			tempTime = tile.getDiscreteTime();
-			newTime = ((originalVelocity * tempTime) / arrivalVelocity) + gridMgmt.reservationGrid.calcDiscreteTime(arrivalTime);
+			if(arrivalVelocity < maxVel && isAccelerating){
+				accelFactor = (originalVelocity / arrivalVelocity) / Math.abs(tempTime * maxAcc);
+			}
+			newTime = tempTime * accelFactor + gridMgmt.reservationGrid.calcDiscreteTime(arrivalTime);
 			//if already reserved, return null
 			if(gridMgmt.reservationGrid.isReserved(tempTime,tile.getTileId())) return null;
 			//else add to working list
@@ -447,8 +457,14 @@ public class ReservationGridManager implements
 			/*if(tempTime > departureTime){
 				departureTime = tempTime;
 			}*/
+			lastTile = tile;
+			lastVelocity = Math.min((arrivalVelocity + tempTime * maxAcc),maxVel);
+			
 		}
-		return new Plan(vin, departureTime, arrivalTime, exitVelocity, newWorkingList, accelerationProfile, arrivalLane, arrivalLane, gridMgmt);
+		//assuming last tile is a buffer tile
+		double exitTime = lastTile.getTime() - gridMgmt.edgeTileTimeBufferSteps * gridMgmt.reservationGrid.getGridTimeStep();
+		
+		return new Plan(vin, departureTime, arrivalTime, lastVelocity, newWorkingList, accelerationProfile, arrivalLane, arrivalLane, gridMgmt);
 	}
   }
 
@@ -675,7 +691,7 @@ public class ReservationGridManager implements
 		//TODO
 		Plan basePlan = getPlan(arrivalLaneId, departureLaneId);
 		
-		return basePlan.getNewPlan(arrivalTime, arrivalVelocity, vin, isAccelerating);
+		return basePlan.getNewPlan(this.getVehicleSpec(), arrivalTime, arrivalVelocity, vin, isAccelerating);
 	}
 	public VehicleSpec getVehicleSpec(){
 		return vehicle;
