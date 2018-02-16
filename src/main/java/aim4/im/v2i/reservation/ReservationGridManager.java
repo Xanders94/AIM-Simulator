@@ -33,6 +33,7 @@ package aim4.im.v2i.reservation;
 import java.awt.Shape;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -336,6 +337,8 @@ public class ReservationGridManager implements
     private Lane departureLane;
 	private double entryTime;
 	private ReservationGridManager gridMgmt;
+	
+	private List<TileTimeFrame> tileList;
 
     /**
      * Create the plan for the reservation.
@@ -356,6 +359,7 @@ public class ReservationGridManager implements
       this.exitVelocity = exitVelocity;
       this.workingList = workingList;
       this.accelerationProfile = accelerationProfile;
+      this.tileList = null;
     }
     public Plan(int vin,
             double exitTime,
@@ -375,6 +379,7 @@ public class ReservationGridManager implements
 	  this.arrivalLane = arrivalLane;
 	  this.departureLane = departureLane;
 	  this.gridMgmt = gridMgmt;
+	  this.tileList = null;
 }
 
     /**
@@ -426,6 +431,13 @@ public class ReservationGridManager implements
     }
     public Lane getDepartureLane(){
     	return departureLane;
+    }
+    
+    public void storeTileList(List<TileTimeFrame> tiles){
+    	this.tileList = tiles;
+    }
+    public List<TileTimeFrame> getTileFrameList(){
+    	return this.tileList;
     }
 	public Plan getNewPlan(VehicleSpec vehicle, double arrivalTime,
 			double arrivalVelocity, int vin, boolean isAccelerating) {
@@ -525,6 +537,51 @@ public class ReservationGridManager implements
     }
 
   }
+  /**
+   * stores a set of tile ids linked to a particular position
+   * @author Alexander
+   *
+   */
+  public class TileTimeFrame{
+	  List<Integer> tileIds;
+	  Point2D pos;
+	  
+	  //constructors
+	  /**
+	   * Populates instance of TileTimeFrame
+	   * @param position
+	   * @param tileIds
+	   */
+	  TileTimeFrame(Point2D position, List<Integer> tileIds){
+		  this.tileIds = tileIds;
+		  this.pos = position;
+	  }
+	  /**
+	   * Populates instance of TileTimeFrame
+	   * @param x
+	   * @param y
+	   * @param tileIds
+	   */
+	  TileTimeFrame(double x, double y, List<Integer> tileIds){
+		  this.tileIds = tileIds;
+		  this.pos = new Point2D.Double(x, y);
+	  }
+	  
+	  //public methods
+	  public Point2D getPosition(){
+		  return pos;
+	  }
+	  public List<Integer> getTileIds(){
+		  return tileIds;
+	  }
+	  
+	  public double getDistanceFromPoint(Point2D point){
+		  return pos.distance(point);
+	  }
+	  public double getDistanceFromPoint(double x, double y){
+		  return pos.distance(x, y);
+	  }
+  }
   //TODO
   public class PlanStore{
 	  /**
@@ -545,7 +602,7 @@ public class ReservationGridManager implements
 	  /**
 	   * create a set of generic vehicle plans
 	   * @param vehicleSpec
-	 * @param reservationGridManager 
+	   * @param reservationGridManager 
 	   */
 	  public PlanStore(VehicleSpec vehicleSpec, ReservationGridManager reservationGridManager){
 		  vehicle = vehicleSpec;

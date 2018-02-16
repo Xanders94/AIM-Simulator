@@ -256,7 +256,7 @@ public class AutoDriverOnlySimulator implements Simulator {
       System.err.printf("------SIM:letDriversAct---------------\n");
     }
     letDriversAct();
-    //simSerializer.proxyTest(timeStep);
+    //simSerialiser.proxyTest(timeStep);
     if (Debug.PRINT_SIMULATOR_STAGE) {
       System.err.printf("------SIM:letIntersectionManagersAct--------------\n");
     }
