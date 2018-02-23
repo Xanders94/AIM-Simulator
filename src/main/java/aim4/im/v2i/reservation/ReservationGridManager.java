@@ -359,13 +359,14 @@ public class ReservationGridManager implements
       this.exitVelocity = exitVelocity;
       this.workingList = workingList;
       this.accelerationProfile = accelerationProfile;
-      this.tileList = null;
+      this.tileList = new ArrayList<TileTimeFrame>();
     }
     public Plan(int vin,
             double exitTime,
             double entryTime,
             double exitVelocity,
             List<TimeTile> workingList,
+            List<TileTimeFrame> tileTimeFrameList, 
             Queue<double[]> accelerationProfile,
             Lane arrivalLane,
             Lane departureLane,
@@ -379,7 +380,7 @@ public class ReservationGridManager implements
 	  this.arrivalLane = arrivalLane;
 	  this.departureLane = departureLane;
 	  this.gridMgmt = gridMgmt;
-	  this.tileList = null;
+	  this.tileList = tileTimeFrameList;
 }
 
     /**
@@ -436,6 +437,9 @@ public class ReservationGridManager implements
     public void storeTileList(List<TileTimeFrame> tiles){
     	this.tileList = tiles;
     }
+    public void storeTileFrame(TileTimeFrame tile){
+    	this.tileList.add(tile);
+    }
     public List<TileTimeFrame> getTileFrameList(){
     	return this.tileList;
     }
@@ -476,7 +480,7 @@ public class ReservationGridManager implements
 		//assuming last tile is a buffer tile
 		double exitTime = lastTile.getTime() - gridMgmt.edgeTileTimeBufferSteps * gridMgmt.reservationGrid.getGridTimeStep();
 		
-		return new Plan(vin, departureTime, arrivalTime, lastVelocity, newWorkingList, accelerationProfile, arrivalLane, arrivalLane, gridMgmt);
+		return new Plan(vin, departureTime, arrivalTime, lastVelocity, newWorkingList, tileList, accelerationProfile, arrivalLane, arrivalLane, gridMgmt);
 	}
   }
 
@@ -543,7 +547,7 @@ public class ReservationGridManager implements
    *
    */
   public class TileTimeFrame{
-	  List<Integer> tileIds;
+	  List<Tile> tiles;
 	  Point2D pos;
 	  
 	  //constructors
@@ -552,8 +556,8 @@ public class ReservationGridManager implements
 	   * @param position
 	   * @param tileIds
 	   */
-	  TileTimeFrame(Point2D position, List<Integer> tileIds){
-		  this.tileIds = tileIds;
+	  TileTimeFrame(Point2D position, List<Tile> tiles){
+		  this.tiles = tiles;
 		  this.pos = position;
 	  }
 	  /**
@@ -562,8 +566,8 @@ public class ReservationGridManager implements
 	   * @param y
 	   * @param tileIds
 	   */
-	  TileTimeFrame(double x, double y, List<Integer> tileIds){
-		  this.tileIds = tileIds;
+	  TileTimeFrame(double x, double y, List<Tile> tiles){
+		  this.tiles = tiles;
 		  this.pos = new Point2D.Double(x, y);
 	  }
 	  
@@ -571,8 +575,8 @@ public class ReservationGridManager implements
 	  public Point2D getPosition(){
 		  return pos;
 	  }
-	  public List<Integer> getTileIds(){
-		  return tileIds;
+	  public List<Tile> getTiles(){
+		  return tiles;
 	  }
 	  
 	  public double getDistanceFromPoint(Point2D point){
@@ -638,7 +642,6 @@ public class ReservationGridManager implements
 					for(Lane exitLane : exitRoad.getLanes()){
 						//check if lane pair is valid
 						//if(!CorrectTurn(entryRoad,exitRoad,turnCode)) continue;
-						
 						q = new ReservationGridManager.Query(0, currentTime, maxVelocity, entryLane.getId(), exitLane.getId(), testVehicle, maxVelocity, false);
 						queries.add(q);
 						plans.add(gridMgmt.query(q,true));
@@ -694,6 +697,7 @@ public class ReservationGridManager implements
 	private Plan getPlan(int arrivalLaneId, int departureLaneId){
 		//TODO Auto-generated method stub
 		for(Plan plan : plans){
+			//TODO fix plan reversal problem then switch arrival and departure lanes back
 			if(plan.getArrivalLane().getId() == arrivalLaneId && plan.getDepartureLane().getId() == departureLaneId){
 				return plan;
 			}
@@ -748,7 +752,7 @@ public class ReservationGridManager implements
 		//TODO
 		Plan basePlan = getPlan(arrivalLaneId, departureLaneId);
 		
-		return basePlan.getNewPlan(this.getVehicleSpec(), arrivalTime, arrivalVelocity, vin, isAccelerating);
+		return basePlan;//.getNewPlan(this.getVehicleSpec(), arrivalTime, arrivalVelocity, vin, isAccelerating);
 	}
 	public VehicleSpec getVehicleSpec(){
 		return vehicle;
@@ -946,22 +950,26 @@ public class ReservationGridManager implements
     // Keep track of the TileTimes that will make up this reservation
     // A.H - take precalculated time tiles and fill in ref times, return
     FindTileTimesBySimulationResult fResult = null;
-    if(i && true){
+    if(i){
     	fResult  = findTileTimesBySimulation(testVehicle,
                                   dummy,
                                   q.getArrivalTime(),
                                   q.isAccelerating());
     } else {
     	//TODO build in ability to accelerate
-    	FindTileTimesBySimulationResult fResult1 = this.getPlanStore(q.getVin(),q.getSpec(),q.getArrivalTime(),arrivalLane,departureLane,q.getArrivalVelocity(), q.isAccelerating());
-    	fResult  = findTileTimesBySimulation(testVehicle,
+    	fResult = this.getPlanStore(q,arrivalLane,departureLane,testVehicle,
+                dummy);
+    	
+    	/*FindTileTimesBySimulationResult fResult1  = findTileTimesBySimulation(testVehicle,
                 dummy,
                 q.getArrivalTime(),
-                q.isAccelerating());
-    	fResult1.getExitTime();
+                q.isAccelerating()
+                );
+    	fResult.getExitTime();*/
     }
     if (fResult != null) {
       List<TimeTile> workingList = fResult.getWorkingList();
+      List<TileTimeFrame> tileTimeFrameList = fResult.getFrameBasedWorkingList();
 
       double exitTime = workingList.get(workingList.size()-1).getTime();
 
@@ -978,6 +986,7 @@ public class ReservationGridManager implements
                       q.getArrivalTime(),
                       testVehicle.gaugeVelocity(),
                       workingList,
+                      tileTimeFrameList,
                       accelerationProfile,
                       arrivalLane,
                       departureLane,
@@ -987,11 +996,11 @@ public class ReservationGridManager implements
     }
   }
 
-  private FindTileTimesBySimulationResult getPlanStore(int vin, VehicleSpecForRequestMsg spec, double arrivalTime, Lane arrivalLane,
-		Lane departureLane, double arrivalVelocity, boolean isAccelerating) {
+  private FindTileTimesBySimulationResult getPlanStore(Query q, Lane arrivalLane,
+		Lane departureLane, BasicAutoVehicle testVehicle, Driver dummy) {
 	PlanStore protoPlan = null;
 	for(PlanStore plan : this.preMadePlans){
-		if(plan.vehicle.getName().equals(spec.getName())){
+		if(plan.vehicle.getName().equals(q.getSpec().getName())){
 			protoPlan = plan;
 		}
 	}
@@ -1000,10 +1009,21 @@ public class ReservationGridManager implements
 	if(protoPlan == null){
 		return null;
 	}
-	FindTileTimesBySimulationResult result = new FindTileTimesBySimulationResult(
+	
+	Plan plan = protoPlan.retrieveCurrentPlan(q.getVin(), arrivalLane.getId(), departureLane.getId()
+			, q.getArrivalTime(), q.getArrivalVelocity(), q.isAccelerating());
+	
+	FindTileTimesBySimulationResult result = findTileTimesBySimulation(testVehicle,
+            dummy,
+            q.getArrivalTime(),
+            q.isAccelerating(),
+            plan.getTileFrameList());
+	
+	/*FindTileTimesBySimulationResult result = new FindTileTimesBySimulationResult(
 			protoPlan.retrieveCurrentPlan(vin, arrivalLane.getId(), departureLane.getId()
 					, arrivalTime, arrivalVelocity, isAccelerating).getWorkingList()
-					, arrivalVelocity);
+					, arrivalVelocity);*/
+	
 	return result;
 }
 
@@ -1083,6 +1103,9 @@ public class ReservationGridManager implements
   private static class FindTileTimesBySimulationResult {
     /** The time tiles */
     List<TimeTile> workingList;
+    
+    List<TileTimeFrame> frameWorkingList;
+    
     /** The exit time */
     double exitTime;
 
@@ -1097,7 +1120,14 @@ public class ReservationGridManager implements
                                            double exitTime) {
       this.workingList = workingList;
       this.exitTime = exitTime;
+      this.frameWorkingList = new ArrayList<TileTimeFrame>();
     }
+    public FindTileTimesBySimulationResult(List<TimeTile> workingList, List<TileTimeFrame> frameWorkingList,
+            double exitTime) {
+    	this.workingList = workingList;
+		this.exitTime = exitTime;
+		this.frameWorkingList = frameWorkingList;
+	}
 
     /**
      * Get the time tiles.
@@ -1106,6 +1136,10 @@ public class ReservationGridManager implements
      */
     public List<TimeTile> getWorkingList() {
       return workingList;
+    }
+    
+    public List<TileTimeFrame> getFrameBasedWorkingList(){
+    	return frameWorkingList;
     }
 
     /**
@@ -1136,6 +1170,11 @@ public class ReservationGridManager implements
                                       Driver dummy,
                                       double arrivalTime,
                                       boolean accelerating) {
+	  //TODO A.S.H add mechanism for tying vehicle position to frame in time
+	  List<TileTimeFrame> posBasedTiles = new ArrayList<TileTimeFrame>();
+	  TileTimeFrame currentFrame;
+	  
+	  
     // The area of the intersection
     Area areaPlus = intersection.getAreaPlus();
     // The following must be true because the test vehicle
@@ -1158,9 +1197,9 @@ public class ReservationGridManager implements
       moveTestVehicle(testVehicle, dummy, currentDuration, accelerating);
       // Find out which tiles are occupied by the vehicle
       currentIntTime++;  // Record that we've moved forward one time step
-      List<Tile> occupied =
-        tiledArea.findOccupiedTiles(testVehicle.getShape(staticBufferSize));
-
+      List<Tile> occupied;
+    	  occupied =
+	        tiledArea.findOccupiedTiles(testVehicle.getShape(staticBufferSize));
       // Make sure none of these tiles are reserved by someone else already
       for(Tile tile : occupied) {
 
@@ -1173,7 +1212,6 @@ public class ReservationGridManager implements
           buffer = internalTileTimeBufferSteps;
         }
         int tileId = tile.getId();
-        //TODO A.H - take time from here
         for(int t = currentIntTime - buffer; t <= currentIntTime + buffer; t++){
           // If the tile is already reserved and it isn't by us, we've failed
           if (!reservationGrid.isReserved(t, tileId)) {
@@ -1183,12 +1221,103 @@ public class ReservationGridManager implements
           }
         }
       }
+      currentFrame = new TileTimeFrame(testVehicle.gaugePosition(), occupied);
+      posBasedTiles.add(currentFrame);
       currentDuration = reservationGrid.getGridTimeStep();
     }
-
+    
     return new FindTileTimesBySimulationResult(workingList,
+    										   posBasedTiles,
                                                reservationGrid
                                                .calcTime(currentIntTime));
+  }
+  
+  private FindTileTimesBySimulationResult findTileTimesBySimulation(BasicAutoVehicle testVehicle,
+          Driver dummy,
+          double arrivalTime,
+          boolean accelerating,
+          List<TileTimeFrame> tileTimeFrame) {
+	  
+	  //time tile frame initialization
+	  double dist = -1;
+	  double tempDist = 0;
+	  int index = 0;
+	  
+	  //get best starting index on tileTimeFrame array
+	  for(int i = Math.min(tileTimeFrame.size() - 2, 4); i >= 0; i--){
+		  //initialise dist
+		  if(dist == -1){
+			  dist = testVehicle.getPosition().distance(tileTimeFrame.get(i+1).getPosition());
+		  }
+		  tempDist = testVehicle.getPosition().distance(tileTimeFrame.get(i).getPosition());
+		  //compare distance with next point
+		  if(dist > tempDist){
+			  dist = tempDist;
+			  index = i;
+		  }
+	  }
+	  
+	// The area of the intersection
+	    Area areaPlus = intersection.getAreaPlus();
+	    // The following must be true because the test vehicle
+	    // starts at the entry point of the intersection.
+	    assert areaPlus.contains(testVehicle.getPointAtMiddleFront(
+	             Constants.DOUBLE_EQUAL_PRECISION));
+
+	    // The list of tile-times that will make up this reservation
+	    List<TimeTile> workingList = new ArrayList<TimeTile>();
+
+	    // A discrete representation of the time throughout the internal simulation
+	    // Notice that currentIntTime != arrivalTime
+	    //TODO use this for descrete time
+	    int currentIntTime = reservationGrid.calcDiscreteTime(arrivalTime);
+	    // The duration in the current time interval
+	    double currentDuration = reservationGrid.calcRemainingTime(arrivalTime);
+	    
+	    // drive the test vehicle until it leaves the intersection
+	    while(VehicleUtil.intersects(testVehicle, areaPlus)) {
+	      moveTestVehicle(testVehicle, dummy, currentDuration, accelerating);
+	      //note: tile steps assumed to be taken with fasted possible traversal speed
+	      //find if this or the next tile set is closest
+	      for(int j = index + 1; j < tileTimeFrame.size(); j++){
+	    	  dist = testVehicle.getPosition().distance(tileTimeFrame.get(j-1).getPosition());
+	    	  tempDist = testVehicle.getPosition().distance(tileTimeFrame.get(j).getPosition());
+		      if(dist < tempDist){
+		    	  index = j - 1;
+		    	  break;
+		      }
+	      }
+	      // Find out which tiles are occupied by the vehicle
+	      currentIntTime++;  // Record that we've moved forward one time step
+	      List<Tile> occupied = tileTimeFrame.get(index).getTiles();
+	      // Make sure none of these tiles are reserved by someone else already
+	      for(Tile tile : occupied) {
+
+	        // Figure out how large of a time buffer to use, based on whether or
+	        // not this is an edge tile
+	        int buffer;
+	        if (isEdgeTileTimeBufferEnabled && tile.isEdgeTile()) {
+	          buffer = edgeTileTimeBufferSteps;
+	        } else {
+	          buffer = internalTileTimeBufferSteps;
+	        }
+	        int tileId = tile.getId();
+	        //TODO A.H - take time from here
+	        for(int t = currentIntTime - buffer; t <= currentIntTime + buffer; t++){
+	          // If the tile is already reserved and it isn't by us, we've failed
+	          if (!reservationGrid.isReserved(t, tileId)) {
+	            workingList.add(reservationGrid.new TimeTile(t, tile.getId()));
+	          } else {
+	            return null; // Failure! Just bail!
+	          }
+	        }
+	      }
+	      currentDuration = reservationGrid.getGridTimeStep();
+	    }
+
+	    return new FindTileTimesBySimulationResult(workingList,
+	                                               reservationGrid
+	                                               .calcTime(currentIntTime));
   }
 
   /**
