@@ -621,7 +621,7 @@ public class ReservationGridManager implements
 	private void generatePlans() {
 		//TODO generate plans for vehicle
 		double currentTime = gridMgmt.currentTime;
-		double maxVelocity = this.vehicle.getMaxVelocity();
+		double maxVelocity = this.vehicle.getMaxVelocity()*0.14;
 		VehicleSpecForRequestMsg testVehicle = new VehicleSpecForRequestMsg(vehicle);
 		Query q;
 		List<Road> entryRoads = gridMgmt.intersection.getEntryRoads();
@@ -642,6 +642,7 @@ public class ReservationGridManager implements
 					for(Lane exitLane : exitRoad.getLanes()){
 						//check if lane pair is valid
 						//if(!CorrectTurn(entryRoad,exitRoad,turnCode)) continue;
+						
 						q = new ReservationGridManager.Query(0, currentTime, maxVelocity, entryLane.getId(), exitLane.getId(), testVehicle, maxVelocity, false);
 						queries.add(q);
 						plans.add(gridMgmt.query(q,true));
@@ -926,13 +927,12 @@ public class ReservationGridManager implements
    *         successful; otherwise return null.
    */
   @Override
-  public Plan query(Query q, boolean i) {
+  public Plan query(Query q, boolean init) {
     // Position the Vehicle to be ready to start the simulation
     Lane arrivalLane =
       Debug.currentMap.getLaneRegistry().get(q.getArrivalLaneId());
     Lane departureLane =
       Debug.currentMap.getLaneRegistry().get(q.getDepartureLaneId());
-
     // Create a test vehicle to use in the internal simulation
     // A.H - modify spawn spec for vehicles with tile sequences at start 
     BasicAutoVehicle testVehicle =
@@ -950,7 +950,7 @@ public class ReservationGridManager implements
     // Keep track of the TileTimes that will make up this reservation
     // A.H - take precalculated time tiles and fill in ref times, return
     FindTileTimesBySimulationResult fResult = null;
-    if(i){
+    if(init){
     	fResult  = findTileTimesBySimulation(testVehicle,
                                   dummy,
                                   q.getArrivalTime(),
@@ -1192,9 +1192,12 @@ public class ReservationGridManager implements
     // The duration in the current time interval
     double currentDuration = reservationGrid.calcRemainingTime(arrivalTime);
     
+    //test
+    Point2D vehiclePos = new Point2D.Double(0.0,0.0);
     // drive the test vehicle until it leaves the intersection
     while(VehicleUtil.intersects(testVehicle, areaPlus)) {
       moveTestVehicle(testVehicle, dummy, currentDuration, accelerating);
+      vehiclePos = testVehicle.gaugePosition();
       // Find out which tiles are occupied by the vehicle
       currentIntTime++;  // Record that we've moved forward one time step
       List<Tile> occupied;
@@ -1225,7 +1228,7 @@ public class ReservationGridManager implements
       posBasedTiles.add(currentFrame);
       currentDuration = reservationGrid.getGridTimeStep();
     }
-    
+    vehiclePos.getX();
     return new FindTileTimesBySimulationResult(workingList,
     										   posBasedTiles,
                                                reservationGrid
