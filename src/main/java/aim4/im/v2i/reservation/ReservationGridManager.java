@@ -642,6 +642,7 @@ public class ReservationGridManager implements
 					for(Lane exitLane : exitRoad.getLanes()){
 						//check if lane pair is valid
 						//if(!CorrectTurn(entryRoad,exitRoad,turnCode)) continue;
+						if(entryRoad.getName().equals(exitRoad.getName()) && exitLane.getId() != entryLane.getId()) continue;
 						
 						q = new ReservationGridManager.Query(0, currentTime, maxVelocity, entryLane.getId(), exitLane.getId(), testVehicle, maxVelocity, false);
 						queries.add(q);
