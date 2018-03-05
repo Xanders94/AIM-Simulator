@@ -44,6 +44,7 @@ import aim4.msg.i2v.I2VMessage;
 import aim4.msg.v2i.V2IMessage;
 import aim4.noise.DoubleGauge;
 import aim4.vehicle.AutoVehicleDriverView.LRFMode;
+import aim4.vehicle.BasicVehicle.MoveToTargetVelocityMovement;
 
 
 /**
@@ -539,5 +540,23 @@ public class BasicAutoVehicle extends BasicVehicle
   public V2IMessage getLastV2IMessage() {
     return lastV2IMessage;
   }
-
+  
+  /**
+   * allows the repositioning of an auto vehicle to the specified position with the provided attributes
+   * @param position
+   * @param heading
+   * @param velocity
+   * @param steeringAngle
+   * @param acceleration
+   * @param targetVelocity
+   */
+  public void reposition(Point2D position, double heading, double velocity, double steeringAngle, double acceleration, double targetVelocity){
+	  this.movement = new MoveToTargetVelocityMovement(this.spec,
+              position,
+              heading,
+              velocity,
+              steeringAngle,
+              acceleration,
+              targetVelocity);
+  }
 }

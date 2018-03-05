@@ -630,21 +630,21 @@ public class ReservationGridManager implements
 		for(Road entryRoad : entryRoads){
 			for(Lane entryLane : entryRoad.getLanes()){
 				//set turn code
-				if(entryLane == entryRoad.getIndexLane()){
+				/*if(entryLane == entryRoad.getIndexLane()){
 					turnCode = 3;
 				} else if(entryLane == entryRoad.getLanes().get(entryRoad.getLanes().size() - 1)){
 					turnCode = 1;
 				} else {
 					turnCode = 2;
-				}
+				}*/
 				for(Road exitRoad : exitRoads){
 					if(entryRoad.getDual() == exitRoad) continue;
 					for(Lane exitLane : exitRoad.getLanes()){
 						//check if lane pair is valid
-						//if(!CorrectTurn(entryRoad,exitRoad,turnCode)) continue;
 						if(entryRoad.getName().equals(exitRoad.getName()) && exitLane.getId() != entryLane.getId()) continue;
+						//if(!CorrectTurn(entryRoad,exitRoad,turnCode)) continue;
 						
-						q = new ReservationGridManager.Query(0, currentTime, maxVelocity, entryLane.getId(), exitLane.getId(), testVehicle, maxVelocity, false);
+						q = new ReservationGridManager.Query(0, currentTime, maxVelocity, entryLane.getId(), exitLane.getId(), testVehicle, maxVelocity*1.1, false);
 						queries.add(q);
 						plans.add(gridMgmt.query(q,true));
 					}
@@ -652,7 +652,7 @@ public class ReservationGridManager implements
 			}
 		}
 	}
-	private boolean CorrectTurn(Road entry, Road exit, int turnCode){
+	private boolean CorrectTurn(Road entry, Road exit, Lane entryLane){
 		//Codes
 		//0 = only right
 		//1 = right and straight
@@ -663,7 +663,7 @@ public class ReservationGridManager implements
 		//seperate entry and exit directions
 		String entryDir = entry.getName().substring(entry.getName().length() - 1);
 		String exitDir = exit.getName().substring(exit.getName().length() - 1);
-		
+		/*
 		if(entryDir.equals("N")){
 			if(exitDir.equals("W") && turnCode < 3) return true; //right and straight
 			else if(exitDir.equals("E") && turnCode > 1) return true; // left and straight
@@ -687,7 +687,7 @@ public class ReservationGridManager implements
 			else if(exitDir.equals("N") && turnCode > 1) return true;
 			else if(exitDir.equals("W") && turnCode == 1 || turnCode == 2 || turnCode == 3) return true;
 			else return false;
-		}
+		}*/
 		return false;
 	}
 	/**

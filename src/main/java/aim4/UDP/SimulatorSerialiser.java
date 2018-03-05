@@ -192,15 +192,21 @@ public class SimulatorSerialiser {
 	public boolean recieve(double timeStep){
 		return deSerialise(connection.recieve(),timeStep);
 	}
+	public boolean recieve(double timeStep,boolean testCheck){
+		return deSerialise("start#0#50#6#0#0#"+ Math.PI*0+"#end",timeStep);
+	}
 	private boolean deSerialise(String recieve,double timeStep) {
 		//message format start#<auto mode engaged (true/false)>#<positionX>#<positionY>#<velocityX>#
 		//<velocityY>#<heading>#end
 		String[] recieveSplit = recieve.split("#");
 		//if no proxy vehicle exists to be updated, return false
-		if(playerVehicles.isEmpty()){
+		if(getPlayerVehicle() == null){
 			return false;
 		}
-		ProxyVehicle player = playerVehicles.get(0);
+		BasicAutoVehicle player = (BasicAutoVehicle) getPlayerVehicle();
+		if(!(player.getDriver() instanceof ProxyDriver)){
+			player.setDriver(new ProxyDriver(player, sim.getMap()));
+		}
 		//only lead proxy vehicle if aim has been given control
 		if(recieveSplit[1].equals("0")){
 			//send proxy vehicle movement and position data to proxy vehicle driver
@@ -208,7 +214,9 @@ public class SimulatorSerialiser {
 					rollOverBearing(Double.parseDouble(recieveSplit[6]) + Math.PI), 0, 0,
 					0, 0, sim.getSimulationTime());
 					//Math.sqrt(Math.pow(Double.parseDouble(recieveSplit[4]),2) + Math.pow(Double.parseDouble(recieveSplit[5]),2))
-			player.processReal2ProxyMsg(msg);
+			//player.processReal2ProxyMsg(msg);
+			player.reposition(new Point2D.Double(Double.parseDouble(recieveSplit[2]) + 157.5, Double.parseDouble(recieveSplit[3]) + 157.5)
+			, rollOverBearing(Double.parseDouble(recieveSplit[6]) + Math.PI), 0, 0, 0, 0);
 			//update current lane occupied
 			player.getDriver().setCurrentLane(getClosestLane(player));
 			//move vehicle
@@ -228,8 +236,10 @@ public class SimulatorSerialiser {
 		vehicles = new ArrayList<VehicleSimView>();
 		outVehicles = new ArrayList<VehicleSimView>();
 		double tireRollAngle = 0;
-		boolean recieveEnabled = false; // set true to communicate with SimCreator
+		boolean recieveEnabled = true; // set true to communicate with SimCreator
+		boolean recieveEnabledTest = false;
 		//retrieve vehicles from simulator active list
+		@SuppressWarnings("unused")
 		int vanNumber = 0;
 		//debug
 		
@@ -263,9 +273,12 @@ public class SimulatorSerialiser {
 		outVehicles = vehicles;
 		*/
 		//retrieve simulator communication if proxyVehicle defined in AIM4
-		if(!playerVehicles.isEmpty() && recieveEnabled){
+		if((getPlayerVehicle() != null) && recieveEnabled){
 			this.recieve(timeStep);
+		} else if((getPlayerVehicle() != null) && recieveEnabledTest){
+			this.recieve(timeStep,recieveEnabledTest);
 		}
+		if(getPlayerVehicle() != null);
 		//compute offset in front of proxy vehicle for usable set
 		//compile list of usable vehicles and
 		//map vehicles to set VIN numbers for simcreator model assignment
@@ -435,10 +448,10 @@ public class SimulatorSerialiser {
 		//System.out.println("number of vans in active is: " + vanNumber);
 		//add information on this simulator's proxy vehicle if available
 		
-		//disabled till connection test performed
-		if(!playerVehicles.isEmpty() && false){
+		//TODO disabled till connection test performed
+		if(!playerVehicles.isEmpty()&& false){
 			//gather proxy vehicle parameters (similar to autoVehicle above)
-			ProxyVehicle player = playerVehicles.get(0);
+			BasicAutoVehicle player = playerVehicles.get(0);
 			xCoord = player.getCenterPoint().getX() - 157.5;
 			yCoord = player.getCenterPoint().getY() - 157.5;
 			double velocityX = 0.0;
@@ -673,7 +686,7 @@ public class SimulatorSerialiser {
 			System.err.println("Player Vehicle Position: " + player.getPosition().getX() + "/"+ player.getPosition().getY());
 		}
 	}
-	public Lane getClosestLane(ProxyVehicle player){
+	public Lane getClosestLane(BasicAutoVehicle player){
 		
 		Point2D[] positions = player.getCornerPoints();
 		Lane laneReturn = player.getDriver().getCurrentLane();
