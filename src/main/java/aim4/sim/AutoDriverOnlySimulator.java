@@ -173,6 +173,8 @@ public class AutoDriverOnlySimulator implements Simulator {
     
     simCreatorConnections = new ArrayList<SimulatorSerialiser>();
     
+    simCreatorConnections.add(new SimulatorSerialiser(this,2504, "192.168.0.4",SimulatorSerialiser.ODPair.SOUTH_NORTH)); //sim3
+    
     //add simulator connections
     //simCreatorConnections.add(new SimulatorSerializer(this,2502, "192.168.0.2",SimulatorSerializer.ODPair.NORTH_SOUTH)); //sim1 - maintenance
     /*simCreatorConnections.add(new SimulatorSerializer(this,2500, "192.168.0.3",SimulatorSerializer.ODPair.EAST_WEST)); //sim2
@@ -191,12 +193,12 @@ public class AutoDriverOnlySimulator implements Simulator {
     bidSet.add(average * 1);//test3 Sim4
     bidSet.add(average * 1);//test3 Sim5
     
-    testProgramSelect(2, bidSet);
+    //testProgramSelect(2, bidSet);
     hasRun = false;
     
     //conflict point test
-	ConflictPointGeneratorSimple test = new ConflictPointGeneratorSimple(this.basicMap);
-	test.generateConflictPoints(this.basicMap.getIntersectionManagers().get(0).getIntersection(), true);
+	//ConflictPointGeneratorSimple test = new ConflictPointGeneratorSimple(this.basicMap);
+	//test.generateConflictPoints(this.basicMap.getIntersectionManagers().get(0).getIntersection(), true);
     
   }
 

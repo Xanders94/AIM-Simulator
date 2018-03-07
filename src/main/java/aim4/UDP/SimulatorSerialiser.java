@@ -110,7 +110,7 @@ public class SimulatorSerialiser {
 		//this.connection = new UDPSocket(2501, "192.168.1.141");
 		initialised = false;
 		initialisedNoVehicle = false;
-		this.connection = new UDPSocket(port, address, false);
+		this.connection = new UDPSocket(port, address, true);
 		setPlayerVehicle(null);
 		this.path = path;
 	}
@@ -208,14 +208,14 @@ public class SimulatorSerialiser {
 			player.setDriver(new ProxyDriver(player, sim.getMap()));
 		}
 		//only lead proxy vehicle if aim has been given control
-		if(recieveSplit[1].equals("0")){
+		if(recieveSplit[2].equals("1")){
 			//send proxy vehicle movement and position data to proxy vehicle driver
-			Real2ProxyPVUpdate msg = new Real2ProxyPVUpdate(player.getVIN(), Double.parseDouble(recieveSplit[2]) + 157.5, Double.parseDouble(recieveSplit[3]) + 157.5,
+			Real2ProxyPVUpdate msg = new Real2ProxyPVUpdate(player.getVIN(), Double.parseDouble(recieveSplit[3]) + 157.5, Double.parseDouble(recieveSplit[4]) + 157.5,
 					rollOverBearing(Double.parseDouble(recieveSplit[6]) + Math.PI), 0, 0,
 					0, 0, sim.getSimulationTime());
 					//Math.sqrt(Math.pow(Double.parseDouble(recieveSplit[4]),2) + Math.pow(Double.parseDouble(recieveSplit[5]),2))
 			//player.processReal2ProxyMsg(msg);
-			player.reposition(new Point2D.Double(Double.parseDouble(recieveSplit[2]) + 157.5, Double.parseDouble(recieveSplit[3]) + 157.5)
+			player.reposition(new Point2D.Double(Double.parseDouble(recieveSplit[3]) + 157.5, Double.parseDouble(recieveSplit[4]) + 157.5)
 			, rollOverBearing(Double.parseDouble(recieveSplit[6]) + Math.PI), 0, 0, 0, 0);
 			//update current lane occupied
 			player.getDriver().setCurrentLane(getClosestLane(player));
@@ -359,7 +359,7 @@ public class SimulatorSerialiser {
 		}
 		//add playerVehicle
 		
-		if(getPlayerVehicle() != null) {
+		if(!recieveEnabled && getPlayerVehicle() != null) {
 			
 			BasicVehicle bVehicle = (BasicVehicle) getPlayerVehicle();
 			//format, VIN#-#positionX#-#positionY#-#heading#-#velocity#-#acceleration#-#steeringAngle#-#dataTransmitted#-#dataReceived
@@ -373,9 +373,9 @@ public class SimulatorSerialiser {
 			
 			/*process heading (yaw) parameter*/
 			if(bVehicle.gaugeHeading() < 0.000000000001){
-				heading = 0;
+				heading = 0 + Math.PI;
 			} else {
-				heading = bVehicle.gaugeHeading();
+				heading = bVehicle.gaugeHeading() + Math.PI;
 			}
 			/*if(false && this.connection.getAddress().equals("192.168.0.5")) {
 				Debug.setVehicleColor(bVehicle.getVIN(), Color.MAGENTA);
@@ -409,13 +409,13 @@ public class SimulatorSerialiser {
 					+ "#" + (float) Math.floor(tireRollAngle * 10000)/10000 //rotation angle of tires in radians
 					+ "#";
 			//vin++;
-		} else {
+		} else if(!recieveEnabled){
 			double offset = 12.0;// + 0.5 * 157.5;
 			xCoord = -offset;// - 157.5;
 			yCoord = offset;// - 157.5;
 
 			//heading = 0.875 * 2 * Math.PI;
-			heading = 0;
+			heading = 0 + Math.PI;
 
 			double steering = 0.0;
 			//convert local velocity to global x and y velocities
