@@ -136,7 +136,7 @@ public class AutoDriverOnlySimulator implements Simulator {
   
   private boolean hasRun;
   
-  private int releaseTestVehicles = 50;//in seconds
+  private int releaseTestVehicles = 20;//in seconds
   /////////////////////////////////
   // CLASS CONSTRUCTORS
   /////////////////////////////////
@@ -174,7 +174,7 @@ public class AutoDriverOnlySimulator implements Simulator {
     simCreatorConnections = new ArrayList<SimulatorSerialiser>();
     
     simCreatorConnections.add(new SimulatorSerialiser(this,2504, "192.168.0.4",SimulatorSerialiser.ODPair.SOUTH_NORTH)); //sim3
-    
+    simCreatorConnections.add(new SimulatorSerialiser(this,2506, "192.168.0.5",SimulatorSerialiser.ODPair.WEST_NORTH)); //sim4
     //add simulator connections
     //simCreatorConnections.add(new SimulatorSerializer(this,2502, "192.168.0.2",SimulatorSerializer.ODPair.NORTH_SOUTH)); //sim1 - maintenance
     /*simCreatorConnections.add(new SimulatorSerializer(this,2500, "192.168.0.3",SimulatorSerializer.ODPair.EAST_WEST)); //sim2

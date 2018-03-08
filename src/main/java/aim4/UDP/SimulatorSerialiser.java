@@ -193,7 +193,7 @@ public class SimulatorSerialiser {
 		return deSerialise(connection.recieve(),timeStep);
 	}
 	public boolean recieve(double timeStep,boolean testCheck){
-		return deSerialise("start#0#50#6#0#0#"+ Math.PI*0+"#end",timeStep);
+		return deSerialise("1#start#1#5#6#0#0#"+ Math.PI*0.25+"#end",timeStep);
 	}
 	private boolean deSerialise(String recieve,double timeStep) {
 		//message format start#<auto mode engaged (true/false)>#<positionX>#<positionY>#<velocityX>#
@@ -216,12 +216,12 @@ public class SimulatorSerialiser {
 					//Math.sqrt(Math.pow(Double.parseDouble(recieveSplit[4]),2) + Math.pow(Double.parseDouble(recieveSplit[5]),2))
 			//player.processReal2ProxyMsg(msg);
 			player.reposition(new Point2D.Double(Double.parseDouble(recieveSplit[3]) + 157.5, Double.parseDouble(recieveSplit[4]) + 157.5)
-			, rollOverBearing(Double.parseDouble(recieveSplit[6]) + Math.PI), 0, 0, 0, 0);
+			, rollOverBearing(Double.parseDouble(recieveSplit[7])), 0, 0, 0, 0);
 			//update current lane occupied
 			player.getDriver().setCurrentLane(getClosestLane(player));
 			//move vehicle
 			player.move(timeStep);
-			System.err.println("Player Vehicle Position: " + player.getPosition().getX() + "/"+ player.getPosition().getY());
+			System.err.println("Player Vehicle Position: " + player.getPosition().getX() + "/"+ player.getPosition().getY() + "/Heading:"+player.gaugeHeading()/Math.PI);
 
 		}
 		return true;
