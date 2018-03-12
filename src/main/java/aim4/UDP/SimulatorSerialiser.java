@@ -193,12 +193,14 @@ public class SimulatorSerialiser {
 		return deSerialise(connection.recieve(),timeStep);
 	}
 	public boolean recieve(double timeStep,boolean testCheck){
-		return deSerialise("1#start#1#5#6#0#0#"+ Math.PI*0.25+"#end",timeStep);
+		return deSerialise("1#start#1#40#5#0#0#"+ Math.PI*16325.5+"#end",timeStep);
 	}
 	private boolean deSerialise(String recieve,double timeStep) {
 		//message format start#<auto mode engaged (true/false)>#<positionX>#<positionY>#<velocityX>#
 		//<velocityY>#<heading>#end
 		String[] recieveSplit = recieve.split("#");
+		double heading = 0;
+		double velocity = 0;
 		//if no proxy vehicle exists to be updated, return false
 		if(getPlayerVehicle() == null){
 			return false;
@@ -210,17 +212,22 @@ public class SimulatorSerialiser {
 		//only lead proxy vehicle if aim has been given control
 		if(recieveSplit[2].equals("1")){
 			//send proxy vehicle movement and position data to proxy vehicle driver
-			Real2ProxyPVUpdate msg = new Real2ProxyPVUpdate(player.getVIN(), Double.parseDouble(recieveSplit[3]) + 157.5, Double.parseDouble(recieveSplit[4]) + 157.5,
+			/*Real2ProxyPVUpdate msg = new Real2ProxyPVUpdate(player.getVIN(), Double.parseDouble(recieveSplit[3]) + 157.5, Double.parseDouble(recieveSplit[4]) + 157.5,
 					rollOverBearing(Double.parseDouble(recieveSplit[6]) + Math.PI), 0, 0,
 					0, 0, sim.getSimulationTime());
 					//Math.sqrt(Math.pow(Double.parseDouble(recieveSplit[4]),2) + Math.pow(Double.parseDouble(recieveSplit[5]),2))
-			//player.processReal2ProxyMsg(msg);
+			player.processReal2ProxyMsg(msg);*/
+			velocity = Math.sqrt(Math.pow(Double.parseDouble(recieveSplit[5]), 2) + Math.pow(Double.parseDouble(recieveSplit[6]), 2));
+			heading = Double.parseDouble(recieveSplit[7]);
 			player.reposition(new Point2D.Double(Double.parseDouble(recieveSplit[3]) + 157.5, Double.parseDouble(recieveSplit[4]) + 157.5)
-			, rollOverBearing(Double.parseDouble(recieveSplit[7])), 0, 0, 0, 0);
+			, rollOverBearing(heading), 0, 0, 0, 0);
 			//update current lane occupied
-			player.getDriver().setCurrentLane(getClosestLane(player));
+			//TODO player.getDriver().setCurrentLane(getClosestLane(player));
+			//TODO getClosestLane(player,true);
 			//move vehicle
 			player.move(timeStep);
+			//update current lane occupied
+			getClosestLane(player,true);
 			System.err.println("Player Vehicle Position: " + player.getPosition().getX() + "/"+ player.getPosition().getY() + "/Heading:"+player.gaugeHeading()/Math.PI);
 
 		}
@@ -236,8 +243,8 @@ public class SimulatorSerialiser {
 		vehicles = new ArrayList<VehicleSimView>();
 		outVehicles = new ArrayList<VehicleSimView>();
 		double tireRollAngle = 0;
-		boolean recieveEnabled = true; // set true to communicate with SimCreator
-		boolean recieveEnabledTest = false;
+		boolean recieveEnabled = false; // set true to communicate with SimCreator
+		boolean recieveEnabledTest = true;
 		//retrieve vehicles from simulator active list
 		@SuppressWarnings("unused")
 		int vanNumber = 0;
@@ -690,7 +697,7 @@ public class SimulatorSerialiser {
 		
 		Point2D[] positions = player.getCornerPoints();
 		Lane laneReturn = player.getDriver().getCurrentLane();
-		Lane tempLane = null;
+		Lane tempLane = laneReturn;
 		for(int i = 0; sim.getMap().getLaneRegistry().isIdExist(i); i++){
 			tempLane = sim.getMap().getLaneRegistry().get(i);
 			for(int j = 0; j < 4; j++){
@@ -705,12 +712,31 @@ public class SimulatorSerialiser {
 		}
 		return laneReturn;
 	}
-	
+	public void getClosestLane(BasicVehicle player, boolean newMethod){
+		
+		Lane tempLane = null;
+		boolean firstRun = true;
+		
+		//search through all lanes
+		for(int i = 0; sim.getMap().getLaneRegistry().isIdExist(i); i++){
+			tempLane = sim.getMap().getLaneRegistry().get(i);
+			if(player.getShape().intersects(tempLane.getShape().getBounds2D())){
+				//if first lane registered, create new lane set, else just add
+				if(firstRun){
+					player.getDriver().setCurrentLane(tempLane);
+					firstRun = false;
+				} else {
+					player.getDriver().addCurrentlyOccupiedLane(tempLane);
+				}
+			}
+		}
+	}
 	public ODPair getPath(){
 		return this.path;
 	}
 	
 	private double rollOverBearing(double bearing){
+		bearing = Math.floor(bearing*1000000)/1000000;
 		while(bearing < 0){
 			bearing = bearing + 2 * Math.PI;
 		}
