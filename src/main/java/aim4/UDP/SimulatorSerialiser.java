@@ -243,8 +243,8 @@ public class SimulatorSerialiser {
 		vehicles = new ArrayList<VehicleSimView>();
 		outVehicles = new ArrayList<VehicleSimView>();
 		double tireRollAngle = 0;
-		boolean recieveEnabled = false; // set true to communicate with SimCreator
-		boolean recieveEnabledTest = true;
+		boolean recieveEnabled = true; // set true to receive communications from SimCreator with regards to the player vehicle
+		boolean recieveEnabledTest = false;
 		//retrieve vehicles from simulator active list
 		@SuppressWarnings("unused")
 		int vanNumber = 0;
