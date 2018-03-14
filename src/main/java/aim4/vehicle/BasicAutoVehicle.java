@@ -542,7 +542,7 @@ public class BasicAutoVehicle extends BasicVehicle
   }
   
   /**
-   * allows the repositioning of an auto vehicle to the specified position with the provided attributes
+   * Allows the repositioning of an auto vehicle as per the provided attributes
    * @param position
    * @param heading
    * @param velocity
