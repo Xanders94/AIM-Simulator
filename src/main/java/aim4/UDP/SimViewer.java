@@ -7,7 +7,7 @@ import javafx.geometry.Point2D;
 /**
  * A set of classes to hold data from UDP communication
  * @author Alexander Humphry
- * 
+ * @deprecated not used in current communications solution
  */
 public class SimViewer {
 	String recievedString;

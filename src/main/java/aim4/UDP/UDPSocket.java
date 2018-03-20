@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
- * manages a pair of ports for the purpose of sending and receiving UDP messages over a network
+ * Manages a pair of ports for the purpose of sending and receiving UDP messages over a network
  * between AIM4 and a SimCreator scenario
  * @author Alexander Humphry
  */
@@ -27,11 +27,11 @@ public class UDPSocket {
 	private double latestTime = -1;
 	/**
 	 * Initializes a two way UDP connection interface between AIM4 and a connected network
-	 * @param port
-	 * @param address
+	 * @param port the port of the target SimCreator simulator
+	 * @param address the address of the target SimCreator simulator
 	 * @param offsetPositive - if set to true, then sets the receiving port to +1 of the sending port number. Else, sets the receiving port to -1 of the sending port
 	 */
-	UDPSocket(int port, String address, boolean offsetPositive){
+	public UDPSocket(int port, String address, boolean offsetPositive){
 		this.port = port;
 		try {
 			this.address = InetAddress.getByName(address);
