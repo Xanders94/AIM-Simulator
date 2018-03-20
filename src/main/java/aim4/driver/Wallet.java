@@ -42,7 +42,7 @@ public class Wallet {
 	  
 	/**
 	* @author Alex Humphry
-	* return the bid of the current vehicle
+	* @return the bid of the current vehicle
 	*/
 	public double getCurrentBid() {
 		return bid;

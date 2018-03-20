@@ -194,7 +194,7 @@ public class BatchModeRequestHandler implements RequestHandler {
      * @param ip1  an indexed proposal
      * @param ip2  an indexed proposal
      *
-     * @return -1 if ip1 < ip2; +1 if ip1 > ip2; 0 if ip1 == ip2
+     * @return -1 if ip1 less than ip2; +1 if ip1 greater than ip2; 0 if ip1 equals ip2
      */
     @Override
     public int compare(IndexedProposal ip1, IndexedProposal ip2) {
@@ -212,7 +212,7 @@ public class BatchModeRequestHandler implements RequestHandler {
      *
      * @param ip  an indexed proposal
      *
-     * @return -1 if < ip; +1 if > ip; 0 if == ip
+     * @return -1 if less than ip; +1 if greater than ip; 0 if equals ip
      */
     @Override
     public int compareTo(IndexedProposal ip) {

@@ -96,7 +96,9 @@ public class TiledArea {
       this.id = id;
     }
 
-    /** Get the area controlled by this ReservationTile. */
+    /** Get the area controlled by this ReservationTile. 
+     * @return rectangle as a Rectangle2D object
+     */
     public Rectangle2D getRectangle() {
       return rectangle;
     }
@@ -450,13 +452,15 @@ public class TiledArea {
   }
   /**
    * tests the intersection of two shapes, returns true if they intersect.
+   * 
+   * @author Alexander Humphry
    * @param shapeA
-   * @param shapeb
+   * @param shapeB
    * @return
    */
-  public boolean testIntersection(Shape shapeA, Shape shapeb){
+  public boolean testIntersection(Shape shapeA, Shape shapeB){
 	  Area areaA = new Area(shapeA);
-	  areaA.intersect(new Area(shapeb));
+	  areaA.intersect(new Area(shapeB));
 	  return !areaA.isEmpty();
   }
   /**
@@ -489,27 +493,37 @@ public class TiledArea {
   			this.y = y;
   			this.id = id;
   		}
-  		/** Get the area controlled by this ReservationTile. */
+  		/** Get the area controlled by this ReservationTile. 
+  		 * @return polygon as a Path2D object
+  		 */
   	    public Path2D getPolygon() {
   	      return polygon;
   	    }
 
-  	    /** Get the x-coordinate of this tile */
+  	    /** Get the x-coordinate of this tile 
+  	     * @return
+  	     */
   	    public int getX() {
   	      return x;
   	    }
 
-  	    /** Get the y-coordinate of this tile */
+  	    /** Get the y-coordinate of this tile 
+  	     * @return
+  	     */
   	    public int getY() {
   	      return y;
   	    }
 
-  	    /** Get the id of this tile */
+  	    /** Get the id of this tile 
+  	     * @return
+  	     */
   	    public int getId() {
   	      return id;
   	    }
 
-  	    /** Whether or not this tile is on the edge */
+  	    /** Whether or not this tile is on the edge 
+  	     * @return is an edge tile
+  	     */
   	    public boolean isEdgeTile() {
   	      return edgeTile;
   	    }

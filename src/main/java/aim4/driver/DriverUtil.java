@@ -66,7 +66,7 @@ public class DriverUtil {
   /**
    * Get the estimated lead distance, which is roughly equal to the speed of
    * the vehicle times the default lead time.
-   *
+   * @param vehicle the vehicle from which the lead distance is calculated
    * @return the lead distance
    */
   public static double getLeadDistance(VehicleDriverView vehicle) {

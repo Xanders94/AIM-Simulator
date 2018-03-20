@@ -104,7 +104,7 @@ public class VehicleSpecDatabase {
 
 
   /**
-   * Get the id of the vehicle specification.  It returns < 0 if the
+   * Get the id of the vehicle specification.  It returns less than 0 if the
    * vehicle specification has not been registered.
    *
    * @param spec  the vehicle specification
@@ -117,7 +117,7 @@ public class VehicleSpecDatabase {
   }
 
   /**
-   * Get the id of the vehicle specification.  It returns < 0 if the
+   * Get the id of the vehicle specification.  It returns less than 0 if the
    * vehicle specification has not been registered.
    *
    * @param name  the name of the vehicle specification

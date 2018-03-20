@@ -13,7 +13,7 @@ public class QuadEdge {
 
     /**
      * Constructs a new <code>QuadEdge</code>, implementing the "MakeEdge" topological operator from
-     * Guibas & Stolfi (1985).
+     * Guibas and Stolfi (1985).
      */
     public QuadEdge() {
 

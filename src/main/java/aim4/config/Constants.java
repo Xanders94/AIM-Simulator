@@ -109,14 +109,14 @@ public final class Constants {
   /**
    * The precision with which two double values are considered equal.
    * The equality of two double values a and b should be tested by
-   * using Math.abs(a-b) < Constants.DOUBLE_EQUAL_PRECISION. {@value}
+   * using Math.abs(a-b) less than Constants.DOUBLE_EQUAL_PRECISION. {@value}
    */
   public static final double DOUBLE_EQUAL_PRECISION = 0.0000000001;
 
   /**
    * The precision with which two double values are considered equal.
    * The equality of two double values a and b should be tested by
-   * using Math.abs(a-b) < Constants.DOUBLE_EQUAL_PRECISION. {@value}
+   * using Math.abs(a-b) less than Constants.DOUBLE_EQUAL_PRECISION. {@value}
    */
   public static final double DOUBLE_EQUAL_WEAK_PRECISION = 0.000001;
 

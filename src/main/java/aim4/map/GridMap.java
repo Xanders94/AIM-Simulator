@@ -574,6 +574,7 @@ public class GridMap implements BasicMap {
    *
    * @param column  the column of the intersection
    * @param row     the row of the intersection
+   * @return Intersection Manager at the column and row specified
    */
   public IntersectionManager getManager(int column, int row) {
     return intersectionManagerGrid[column][row];

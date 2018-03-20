@@ -225,9 +225,9 @@ public class AutoDriverOnlySimulator implements Simulator {
 	}
 	
 	for(SimulatorSerialiser simConnect : simCreatorConnections){
-		if(!simConnect.isInitialisedNoVehicles() && !vinToVehicles.isEmpty()) {
+		if(!simConnect.hasVehicles() && !vinToVehicles.isEmpty()) {
 			simConnect.setVinToVehicles(timeStep, vinToVehicles);
-			simConnect.setInitialisedNoVehicles(true);
+			simConnect.setHasVehicles(true);
 		} else if(!simConnect.isInitialised() && this.getSimulationTime() > releaseTestVehicles) {
 			simConnect.setVinToVehicles(timeStep, vinToVehicles, simConnect.getPath(), simConnect.getBid());
 		}

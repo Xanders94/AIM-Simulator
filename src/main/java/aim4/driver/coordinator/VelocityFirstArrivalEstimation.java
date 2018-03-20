@@ -67,7 +67,7 @@ public class VelocityFirstArrivalEstimation {
    *
    * @return the acceleration schedule and estimated arrival parameters
    *         at the intersection; null if there is no solution
-   * @throws if the algorithm returns no solution.
+   * @throws ArrivalEstimationException if the algorithm returns no solution.
    */
   public static ArrivalEstimationResult estimate(double time1,
                                                  double v1,

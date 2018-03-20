@@ -140,7 +140,7 @@ public interface DriverSimView {
   
   /**
    * set this driver's wallet
-   * @param wallet
+   * @param wallet the wallet object to be associated
    */
   void setWallet(Wallet wallet);
 

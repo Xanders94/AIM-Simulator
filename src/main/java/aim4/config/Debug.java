@@ -91,14 +91,15 @@ public class Debug {
   /////////////////////////////////
 
   /**
-   * Whether or not the simulator shows the vin of the vehicles on screen.
+   * @param vin the vin number to be tested
+   * @return Whether or not the simulator shows the vin of the vehicles on screen.
    */
   public static boolean isTargetVIN(int vin) {
     return vin == targetVIN;
   }
 
   /**
-   * Get the target vehicle's ID
+   * @return the target vehicle's ID
    */
   public static int getTargetVIN() {
     return targetVIN;
@@ -106,6 +107,7 @@ public class Debug {
 
   /**
    * Set the target vehicle's ID
+   * @param vin the target vehicle's vin
    */
   public static void setTargetVIN(int vin) {
     targetVIN = vin;
@@ -119,7 +121,7 @@ public class Debug {
   }
 
   /**
-   * Get the target intersection manager's ID
+   * @return the target intersection manager's ID
    */
   public static int getTargetIMid() {
     return targetIMid;
@@ -127,6 +129,7 @@ public class Debug {
 
   /**
    * Set the target intersection manager's ID
+   * @param vin the target intersection manager's ID
    */
   public static void setTargetIMid(int vin) {
     targetIMid = vin;
@@ -140,8 +143,8 @@ public class Debug {
   }
 
   /**
-   * Whether or not the simulator print the state of the driver of the target
-   * vehicle
+   * @param vin of the vehicle to test
+   * @return Whether or not the simulator print the state of the driver of the target vehicle
    */
   public static boolean isPrintDriverStateOfVIN(int vin) {
     return (vin == targetVIN);
@@ -149,7 +152,7 @@ public class Debug {
   }
 
   /**
-   * Whether or not the simulator print the state of the target vehicle.
+   * @return Whether or not the simulator print the state of the target vehicle.
    */
   public static boolean isPrintVehicleStateOfVIN(int vin) {
     // return (vin == targetVIN);
@@ -157,8 +160,7 @@ public class Debug {
   }
 
   /**
-   * Whether or not the simulator print the messages received by IM of the
-   * target vehicle.
+   * @return Whether or not the simulator print the messages received by IM of the target vehicle.
    */
   public static boolean isPrintIMInboxMessageOfVIN(int vin) {
     // return (vin == targetVIN);
@@ -166,8 +168,8 @@ public class Debug {
   }
 
   /**
-   * Whether or not the simulator print the messages sent by IM of the target
-   * vehicle.
+   * @param vin the vin of the vehicle to test
+   * @return Whether or not the simulator print the messages sent by IM of the target vehicle.
    */
   public static boolean isPrintIMOutboxMessageOfVIN(int vin) {
     return (vin == targetVIN);
@@ -175,8 +177,8 @@ public class Debug {
   }
 
   /**
-   * Whether or not the simulator print the messages received by the target
-   * vehicle.
+   * @param vin the vin of the vehicle to test
+   * @return Whether or not the simulator print the messages received by the target vehicle.
    */
   public static boolean isPrintVehicleInboxMessageOfVIN(int vin) {
     // return (vin == targetVIN);
@@ -184,7 +186,8 @@ public class Debug {
   }
 
   /**
-   * Whether or not the simulator print the messages sent by the target vehicle.
+   * @param vin the vin of the vehicle to test
+   * @return Whether or not the simulator print the messages sent by the target vehicle.
    */
   public static boolean isPrintVehicleOutboxMessageOfVIN(int vin) {
     // return (vin == targetVIN);
@@ -193,23 +196,24 @@ public class Debug {
 
 
   /**
-   * Whether or not the simulator print the parameters for arrival estimation
+   * @param vin the vin of the vehicle to test
+   * @return Whether or not the simulator print the parameters for arrival estimation
    */
   public static boolean isPrintArrivalEstimationParameters(int vin) {
     return (vin == targetVIN);
   }
 
   /**
-   * Whether or not the simulator print the parameters for reservation
-   * acceptence check
+   * @param vin the vin of the vehicle to test
+   * @return Whether or not the simulator print the parameters for reservation acceptence check
    */
   public static boolean isPrintReservationAcceptanceCheck(int vin) {
     return (vin == targetVIN);
   }
 
   /**
-   * Whether or not the simulator print the high level control of
-   * the target vehicle.
+   * @param vin the vin of the vehicle to test
+   * @return Whether or not the simulator print the high level control of the target vehicle.
    */
   public static boolean isPrintVehicleHighLevelControlOfVIN(int vin) {
     return false;

@@ -102,11 +102,11 @@ public class Real2ProxyPVUpdate extends Real2ProxyMsg {
    * @param x               the x coordinate of the vehicle
    * @param y               the y coordinate of the vehicle
    * @param heading         the heading of the vehicle
-   * @param steering angle  the steering angle of the vehicle
-   * @param velocity        the guage velocity of the vehicle
+   * @param steeringAngle   the steering angle of the vehicle
+   * @param velocity        the gauge velocity of the vehicle
    * @param targetVelocity  the target velocity of the vehicle
    * @param acceleration    the current acceleration of the vehicle
-   * @param receivedTime    the time stamp
+   * @param recievedTime    the time stamp
    */
   public Real2ProxyPVUpdate(int vin, double x, double y, double heading, double steeringAngle, double velocity, double targetVelocity, double acceleration, double recievedTime){
 	  	super(Type.PV_UPDATE, recievedTime);

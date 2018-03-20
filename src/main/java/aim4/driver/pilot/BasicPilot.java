@@ -50,11 +50,13 @@ public abstract class BasicPilot {
 
   /**
    * Get the vehicle this pilot controls.
+   * @return
    */
   public abstract VehicleDriverView getVehicle();
 
   /**
    * Get the driver this pilot controls.
+   * @return
    */
   public abstract Driver getDriver();
 

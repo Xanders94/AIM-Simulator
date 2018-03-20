@@ -156,27 +156,37 @@ public final class BasePolicy implements Policy, ExtendedBasePolicyCallback {
       this.aczPlan = aczPlan;
     }
 
-    /** Get the VIN of the vehicle */
+    /** Get the VIN of the vehicle 
+     * @return
+     */
     public int getVin() {
       return vin;
     }
 
-    /** Get the successful proposal */
+    /** Get the successful proposal 
+     * @return
+     */
     public Proposal getSuccessfulProposal() {
       return successfulProposal;
     }
 
-    /** Get the reservation plan */
+    /** Get the reservation plan 
+     * @return
+     */
     public Plan getGridPlan() {
       return gridPlan;
     }
 
-    /** Get the ACZ manager */
+    /** Get the ACZ manager 
+     * @return
+     */
     public AczManager getAczManager() {
       return aczManager;
     }
 
-    /** Get the ACZ reservation plan */
+    /** Get the ACZ reservation plan 
+     * @return
+     */
     public aim4.im.v2i.reservation.AczManager.Plan getAczPlan() {
       return aczPlan;
     }

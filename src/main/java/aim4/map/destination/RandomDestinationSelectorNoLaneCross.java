@@ -61,7 +61,7 @@ public class RandomDestinationSelectorNoLaneCross implements DestinationSelector
   /////////////////////////////////
 
   /**
-   * Create a new RandomDestinationSelector from the given Layout.
+   * Create a new RandomDestinationSelectorNoLaneCross from the given Layout.
    *
    * @param layout the Layout from which to create the
    *               RandomDestinationSelector
@@ -112,12 +112,14 @@ public class RandomDestinationSelectorNoLaneCross implements DestinationSelector
 	  }
   }
   /**
-   * @author Alexander Humphry
    * 
    * returns true if a left hand turn is required to travel from the initial heading to the final heading
+   * 
+   * @author Alexander Humphry
+   * 
    * @param initHeading
    * @param finalHeading
-   * @return
+   * @return true, if path involves a left hand turn, else returns false
    */
   private boolean isLeftHandTurn(double initHeading, double finalHeading){
 	  if(initHeading < Math.PI){
@@ -142,9 +144,9 @@ public class RandomDestinationSelectorNoLaneCross implements DestinationSelector
 	  return false;*/
   }
   /**
-   * @author Alexander Humphry
    * 
    * returns true if the path requires a turn of no more than PI * 0.1 radians
+   * @author Alexander Humphry
    * @param initHeading
    * @param finalHeading
    * @return

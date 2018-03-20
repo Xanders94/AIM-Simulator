@@ -51,6 +51,7 @@ public interface Simulator {
    *
    * @param timeStep  the amount of time the simulation should run in
    *                  this time step
+   * @return
    */
   SimStepResult step(double timeStep);
 

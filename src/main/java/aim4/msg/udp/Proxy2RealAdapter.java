@@ -48,6 +48,8 @@ public abstract class Proxy2RealAdapter {
   /**
    * Construct a DatagramPacket of this confirm message
    *
+   * @param msg          The confirmation message to send
+   *
    * @param sa           SocketAddress of the intended destination of the
    *                     datagram
    * @param currentTime  absolute time in seconds
@@ -87,6 +89,8 @@ public abstract class Proxy2RealAdapter {
 
   /**
    * Construct a DatagramPacket of this reject message
+   *
+   * @param msg          the rejection message to send
    *
    * @param sa           SocketAddress of the intended destination of the
    *                     datagram
@@ -149,6 +153,7 @@ public abstract class Proxy2RealAdapter {
    *
    * @param baos         The ByteArrayOutputStream
    * @param currentTime  The current, absolute time in seconds
+   * @param type         The message type as defined in UdpMessageType
    * @return A DataOutputStream object backed by the given baos containing a
    *         UdpHeader
    * @throws IOException

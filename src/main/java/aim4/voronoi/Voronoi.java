@@ -139,12 +139,12 @@ public class Voronoi {
     }
     
     /**
-     * @author Alexander Humphry
-     * 
      * Creates edges along the bounding box. 
      * Must be run after computeBounds(), makeSortedSiteList() and voronoiBuild()
      * 
-     * @param points  the points
+     * @author Alexander Humphry
+     * 
+     * @param polygons  a map of vertices to Path2D polygons
      * @return new edges on bounding box
      */
     public Map<Vertex, Path2D> generateBorderPolygons(Map<Vertex, Path2D> polygons){
@@ -339,10 +339,11 @@ public class Voronoi {
     	return result;
     }
     /**
-     * @author Alexander Humphry
      * 
      * generates a set of graph edges along the border graph
      * note: relies on border points
+     * 
+     * @author Alexander Humphry
      * 
      * @param sites, list of points that generate the diagram
      * @param vertical, true if the y value of the border changes

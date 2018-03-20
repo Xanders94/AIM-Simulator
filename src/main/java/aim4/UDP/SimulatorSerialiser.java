@@ -38,17 +38,17 @@ import aim4.vehicle.AutoVehicleSimView;
 import aim4.vehicle.BasicAutoVehicle;
 
 /**
- * 
- * @author Alexander Humphry
- * takes a simulator class and creates a String to send via UDP
+ * Takes a simulator class and creates a String to send via UDP
  * warning, only works with a single 4 way intersection
+ * @author Alexander Humphry
  */
 public class SimulatorSerialiser {
 	
 	  /**
 	   * 
-	   * @author Alexander Humphry
 	   * specifies the origin/destination pair for the player vehicle
+	   * 
+	   * @author Alexander Humphry
 	   */
 	  public enum ODPair {
 		  NORTH_SOUTH,
@@ -80,7 +80,7 @@ public class SimulatorSerialiser {
 	
 	boolean recieveEnable = false;
 	boolean initialised;
-	boolean initialisedNoVehicle;
+	boolean hasVehicle;
 	
 	ODPair path = null;
 	double playerBid = 0;
@@ -89,37 +89,62 @@ public class SimulatorSerialiser {
 	
 	Random rand = new Random();
 	
-	//a list of all proxy vehicles created in this instance of SimulatorSerialiser
-	//Serialize
+	/**a list of all proxy vehicles created in this instance of SimulatorSerialiser
+	 * Serialize
+	 */
 	ArrayList<ProxyVehicle> playerVehicles = new ArrayList<ProxyVehicle>();
 	
-	//a mapping of vehicles to their simcreator vin values
+	/**
+	 * a mapping of vehicles to their simcreator vin values
+	 */
 	HashMap<Integer,VehicleSimView> vehicleMapping = new HashMap<Integer,VehicleSimView>(52);
-	
+	/**
+	 * Creates a basic simulator serialiser object initialized with an instance of a simulator and a target port and network address
+	 * @param sim
+	 * @param port target network port
+	 * @param address target network address
+	 */
 	public SimulatorSerialiser(AutoDriverOnlySimulator sim, int port, String address){
 		this.sim = sim;
 		//this.connection = new UDPSocket(2501, "192.168.1.141");
 		initialised = false;
-		initialisedNoVehicle = false;
+		hasVehicle = false;
 		this.connection = new UDPSocket(port, address, false);
 		setPlayerVehicle(null);
 	}
-	
+	/**
+	 * creates a simulator serialiser object with an instance of a simulator and a target port and network address.
+	 * in addition, the path of an autonomously controlled player vehicle may be specified
+	 * @param sim
+	 * @param port target network port
+	 * @param address target network address
+	 * @param path
+	 */
 	public SimulatorSerialiser(AutoDriverOnlySimulator sim, int port, String address, ODPair path){
 		this.sim = sim;
 		//this.connection = new UDPSocket(2501, "192.168.1.141");
 		initialised = false;
-		initialisedNoVehicle = false;
+		hasVehicle = false;
 		this.connection = new UDPSocket(port, address, true);
 		setPlayerVehicle(null);
 		this.path = path;
 	}
-	
+	/**
+	 * creates a simulator serialiser object with an instance of a simulator and a target port and network address.
+	 * in addition, the path of an autonomously controlled player vehicle may be specified with a bid parameter which may be
+	 * used when bid or priority controlled intersection policies are in operation.
+	 * @param sim
+	 * @param port target network port
+	 * @param address target network address
+	 * @param path
+	 * @param bid (usually a dollar amount or priority parameter)
+	 * @param simID (used for debug as a label describing the name of the connected simulator, may be left blank)
+	 */
 	public SimulatorSerialiser(AutoDriverOnlySimulator sim, int port, String address, ODPair path, double bid, String simID){
 		this.sim = sim;
 		//this.connection = new UDPSocket(2501, "192.168.1.141");
 		initialised = false;
-		initialisedNoVehicle = false;
+		hasVehicle = false;
 		this.connection = new UDPSocket(port, address, false);
 		setPlayerVehicle(null);
 		this.path = path;
@@ -139,11 +164,18 @@ public class SimulatorSerialiser {
 	public double getBid(){
 		return this.playerBid;
 	}
-	public boolean isInitialisedNoVehicles() {
-		return initialisedNoVehicle;
+	/**
+	 * @return true if any vehicles have been generated and attached to this simulator serialiser object
+	 */
+	public boolean hasVehicles() {
+		return hasVehicle;
 	}
-	public void setInitialisedNoVehicles(boolean noVehicles) {
-		initialisedNoVehicle = noVehicles;
+	/**
+	 * set hasVehicles to given value
+	 * @param vehicles whether this instance of simulator serialiser has vehicle associated with it
+	 */
+	public void setHasVehicles(boolean vehicles) {
+		hasVehicle = vehicles;
 	}
 	public ArrayList<ProxyVehicle> getProxyVehicles(){
 		return playerVehicles;
@@ -152,12 +184,21 @@ public class SimulatorSerialiser {
 		return playerVehicle;
 	}
 	public void setPlayerVehicle(VehicleSimView playerVehicle) {
-
 		this.playerVehicle = playerVehicle;
 	}
+	/**
+	 * return true if simulator serialiser has been fully initialized and given any amount of player or non player vehicles
+	 * @return whether this object is initialised
+	 */
 	public boolean isInitialised(){
 		return this.initialised;
 	}
+	/**
+	 * communicate the current simulator's vehicle list to this instance of simulator serialiser while generating a generic player vehicle
+	 * @param timeStep
+	 * @param vinToVehicles
+	 * @return
+	 */
 	public boolean setVinToVehicles(double timeStep, Map<Integer,VehicleSimView> vinToVehicles){
 		this.vinToVehicles = vinToVehicles;
 		
@@ -167,7 +208,15 @@ public class SimulatorSerialiser {
 		}
 		return false;
 	}
-	
+	/**
+	 * communicate the current simulator's vehicle list to this instance of simulator serialiser while generating a player vehicle with a specified
+	 * origin/destination pair and bid to control its behavior in the intersection and spawn location
+	 * @param timeStep
+	 * @param vinToVehicles
+	 * @param path
+	 * @param bid
+	 * @return
+	 */
 	public boolean setVinToVehicles(double timeStep, Map<Integer,VehicleSimView> vinToVehicles, ODPair path, double bid){
 		this.vinToVehicles = vinToVehicles;
 		
@@ -185,15 +234,29 @@ public class SimulatorSerialiser {
 		}
 		return false;
 	}
-
+	/**
+	 * send the current simulator parameters to the address and port targeted by this instance of simulator serialiser
+	 * @param timeStep
+	 */
 	public void send(double timeStep){
 		connection.send(serialize(timeStep));
 	}
+	/**
+	 * Receive and process a message from a communicating SimCreator simulator
+	 * @param timeStep
+	 * @return success
+	 */
 	public boolean recieve(double timeStep){
 		return deSerialise(connection.recieve(),timeStep);
 	}
-	public boolean recieve(double timeStep,boolean testCheck){
-		return deSerialise("1#start#1#40#5#0#0#"+ Math.PI*16325.5+"#end",timeStep);
+	/**
+	 * inject debug input to simulate communications with a SimCreator simulator
+	 * @param timeStep
+	 * @param debugInput message, format: [mode]#start#[auto mode engaged (1/0)]#[positionX]#[positionY]#[velocityX]#[velocityY]#[heading]#end
+	 * @return
+	 */
+	public boolean recieve(double timeStep,String debugInput){
+		return deSerialise(debugInput+ Math.PI*16325.5+"#end",timeStep);
 	}
 	private boolean deSerialise(String recieve,double timeStep) {
 		//message format start#<auto mode engaged (true/false)>#<positionX>#<positionY>#<velocityX>#
@@ -227,7 +290,7 @@ public class SimulatorSerialiser {
 			//move vehicle
 			player.move(timeStep);
 			//update current lane occupied
-			getClosestLane(player,true);
+			setOccupiedLanes(player);
 			System.err.println("Player Vehicle Position: " + player.getPosition().getX() + "/"+ player.getPosition().getY() + "/Heading:"+player.gaugeHeading()/Math.PI);
 
 		}
@@ -283,7 +346,7 @@ public class SimulatorSerialiser {
 		if((getPlayerVehicle() != null) && recieveEnabled){
 			this.recieve(timeStep);
 		} else if((getPlayerVehicle() != null) && recieveEnabledTest){
-			this.recieve(timeStep,recieveEnabledTest);
+			this.recieve(timeStep,"1#start#1#40#5#0#0#");
 		}
 		if(getPlayerVehicle() != null);
 		//compute offset in front of proxy vehicle for usable set
@@ -618,6 +681,11 @@ public class SimulatorSerialiser {
 		//}
 		return outVehicles;
 	}
+	/**
+	 * generates a player vehicle
+	 * @param timeStep
+	 * @return reference to the proxy vehicle
+	 */
 	public ProxyVehicle generateProxyVehicle(double timeStep){
 		//spawn vehicle
 		for(SpawnPoint spawnPoint : sim.getMap().getSpawnPoints()) {
@@ -673,7 +741,7 @@ public class SimulatorSerialiser {
 		this.playerVehicles.add(vehicle);
 		return vehicle;
 	}
-
+	
 	public void proxyTest(double timeStep) {
 		for(ProxyVehicle player : playerVehicles){
 			//player.setMovement(pos, heading, velocity, steeringAngle, acceleration, targetVelocity);
@@ -693,6 +761,11 @@ public class SimulatorSerialiser {
 			System.err.println("Player Vehicle Position: " + player.getPosition().getX() + "/"+ player.getPosition().getY());
 		}
 	}
+	/**
+	 * returns the closest lane to a given BasicAutoVehicle object
+	 * @param player
+	 * @return
+	 */
 	public Lane getClosestLane(BasicAutoVehicle player){
 		
 		Point2D[] positions = player.getCornerPoints();
@@ -712,8 +785,12 @@ public class SimulatorSerialiser {
 		}
 		return laneReturn;
 	}
-	public void getClosestLane(BasicVehicle player, boolean newMethod){
-		
+	/**
+	 * Sets the lanes occupied by the given basic vehicle for the purposes of collision detection outside of an intersection's area of control.
+	 * Primarily used for manual mode player vehicles
+	 * @param player
+	 */
+	public void setOccupiedLanes(BasicVehicle player){
 		Lane tempLane = null;
 		boolean firstRun = true;
 		

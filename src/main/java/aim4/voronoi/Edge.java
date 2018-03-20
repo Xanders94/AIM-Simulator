@@ -206,7 +206,7 @@ public class Edge {
     }
 
     /**
-     * Implementation of the Splice topological primitive from Guibas & Stolfi (1985). If the two
+     * Implementation of the Splice topological primitive from Guibas and Stolfi (1985). If the two
      * edges have the same origin vertex (they are parts of different loops that leave that
      * vertex), the vertex is split. If the two edges have different origin vertices, those
      * vertices are merged.

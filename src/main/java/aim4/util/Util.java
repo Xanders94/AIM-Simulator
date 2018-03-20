@@ -181,7 +181,7 @@ public class Util {
    *
    * @param a  a double value
    * @param b  a double value
-   * @return whether a >= b.
+   * @return whether a is greater than or equal to b.
    */
   public static boolean isDoubleEqualOrGreater(double a, double b) {
     return a > b || isDoubleEqual(a,b);
@@ -193,7 +193,7 @@ public class Util {
    *
    * @param a  a double value
    * @param b  a double value
-   * @return whether a <= b.
+   * @return whether a is less than or equal to b.
    */
   public static boolean isDoubleEqualOrLess(double a, double b) {
     return a < b || isDoubleEqual(a,b);

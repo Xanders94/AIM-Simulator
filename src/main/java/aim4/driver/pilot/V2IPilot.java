@@ -126,6 +126,7 @@ public class V2IPilot extends BasicPilot {
 
   /**
    * Set the steering action when the vehicle is traversing an intersection.
+   * @param rp reservation parameter
    */
   public void takeSteeringActionForTraversing(ReservationParameter rp) {
     // If we're not already in the departure lane
@@ -158,7 +159,9 @@ public class V2IPilot extends BasicPilot {
    * confirmation from an IntersectionManager. If none exists, or if it is
    * empty, just cruise. Modifies the acceleration profile to reflect the
    * portion it has consumed.
-   *
+   * 
+   * @param rp reservation parameter
+   * 
    * TODO: do not modify the acceleration profile
    */
   public void followAccelerationProfile(ReservationParameter rp) {

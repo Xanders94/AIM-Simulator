@@ -131,6 +131,7 @@ public interface AutoDriverCoordinatorView {
   
   /**
    * set driver's Wallet
+   * @param wallet object to associate
    */
   void setWallet(Wallet wallet);
   /**

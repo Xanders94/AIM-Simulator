@@ -233,7 +233,7 @@ public class MaxAccelReservationCheck {
    *
    * @return the acceleration schedule; null if there is no acceleration
    *         schedule that satisfies the constraints.
-   * @exception if no solution is found.
+   * @exception ReservationCheckException if no solution is found.
    */
   public static AccelSchedule check(double time1, double v1,
                                     double timeEnd, double vEnd,

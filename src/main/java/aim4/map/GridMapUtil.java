@@ -584,7 +584,11 @@ public class GridMapUtil {
                                       new RandomDestinationSelector(map)));
     }
   }
-  
+  /**
+   * set the uniform no path crossing based spawn points.
+   * @param map           the map
+   * @param trafficLevel  the traffic level
+   */
   public static void setUniformRandomSpawnPointsNoLanesCross(GridMap map,
                                                  double trafficLevel) {
     for(SpawnPoint sp : map.getSpawnPoints()) {
