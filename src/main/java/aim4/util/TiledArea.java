@@ -456,7 +456,7 @@ public class TiledArea {
    * @author Alexander Humphry
    * @param shapeA
    * @param shapeB
-   * @return
+   * @return whether the two shapes intersect
    */
   public boolean testIntersection(Shape shapeA, Shape shapeB){
 	  Area areaA = new Area(shapeA);
@@ -501,21 +501,21 @@ public class TiledArea {
   	    }
 
   	    /** Get the x-coordinate of this tile 
-  	     * @return
+  	     * @return tile x coordinate
   	     */
   	    public int getX() {
   	      return x;
   	    }
 
   	    /** Get the y-coordinate of this tile 
-  	     * @return
+  	     * @return tile y coordinate
   	     */
   	    public int getY() {
   	      return y;
   	    }
 
   	    /** Get the id of this tile 
-  	     * @return
+  	     * @return tile id
   	     */
   	    public int getId() {
   	      return id;

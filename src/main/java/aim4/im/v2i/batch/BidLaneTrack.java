@@ -14,15 +14,21 @@ import aim4.map.SpawnPoint;
 //add protected boolean to stop reject message cars from being purged from the list
 
 /**
- * 
- * @author Alexander
  * keeps track of the whole set of vehicles ordered by bid and time spent in queue
+ * @author Alexander Humphry
+ * 
  */
 public class BidLaneTrack{
 	
 	private ArrayList<LaneOrder> laneList;
 	private Comparator<LaneOrder> laneComparator;
 	
+	
+	/**
+	 * Generates a complete per lane bidding mechanism which when refreshed with {@link #refreshTraffic(NavigableSet, double) refreshTraffic},
+	 * produces an ordered set of proposals via {@link #reorderProposals(List, double) reorderProposals} which when reserved sequentially,
+	 * respects the priority denoted by the vehicle's bid and time spent waiting.
+	 */
 	public BidLaneTrack(){
 		laneComparator = new Comparator<LaneOrder>(){
 
@@ -42,8 +48,8 @@ public class BidLaneTrack{
 	}
 	
 	/**
-	 * updates bids for each lane in this object
-	 * @param currentTime
+	 * Updates bids for each lane in this object.
+	 * @param currentTime The current time in the Simulator
 	 */
 	public void updateAllLaneBids(double currentTime){
 		for(LaneOrder lane : laneList){
@@ -54,8 +60,11 @@ public class BidLaneTrack{
 		return;
 	}
 	/**
-	 * Resets all existing vehicles to active, adds any new vehicles (set to active) and deletes all non active vehicles
-	 * @param traffic
+	 * Resets all existing vehicles mentioned in the traffic proposals to active, 
+	 * adds any new vehicles (set to active) to their appropriate lanes and then 
+	 * removes all remaining non active vehicles.
+	 * @param traffic A set of proposals
+	 * @param currentTime The current time in the simulator
 	 */
 	public void refreshTraffic(NavigableSet<IndexedProposal> traffic, double currentTime){
 		for(IndexedProposal proposal : traffic){
@@ -71,8 +80,8 @@ public class BidLaneTrack{
 		}
 	}
 	/**
-	 * set all vehicles associated with this object to inactive
-	 * unless set to active, refresh traffic will remove the vehicle
+	 * Sets all vehicles associated with this BidLaneTrack object to inactive.
+	 * Unless set to active, {@link #refreshTraffic(NavigableSet, double) refreshTraffic} will remove the vehicle
 	 */
 	public void setAllToInactive(){
 		for(LaneOrder lane : laneList){
@@ -81,13 +90,13 @@ public class BidLaneTrack{
 	}
 	/**
 	 * Takes the current set of selected proposals and orders them based on which lane has the most bidding power.
-	 * @param proposals2
-	 * @return
+	 * @param proposals A list of proposals communicated by the vehicle
+	 * @param currentTime The current time in the simulator
+	 * @return A reordered set of proposals based on the current state of associated vehicles
 	 */
-	public ArrayList<IndexedProposal> reorderProposals(List<IndexedProposal> proposals2, double currentTime){
-		ArrayList<IndexedProposal> tempStorage = new ArrayList<IndexedProposal>(proposals2);
+	public ArrayList<IndexedProposal> reorderProposals(List<IndexedProposal> proposals, double currentTime){
+		ArrayList<IndexedProposal> tempStorage = new ArrayList<IndexedProposal>(proposals);
 		ArrayList<IndexedProposal> result = new ArrayList<IndexedProposal>();
-		
 		updateAllLaneBids(currentTime);
 		
 		for(LaneOrder lane : laneList){
@@ -102,9 +111,9 @@ public class BidLaneTrack{
 }
 
 /**
- * 
- * @author Alexander
  * groups vehicles by lane and keeps effective bids up to date
+ * @author Alexander Humphry
+ * 
  */
 class LaneOrder {
 	private LinkedList<QueueVehicle> laneVehicles;
@@ -174,9 +183,9 @@ class LaneOrder {
 	}
 }
 /**
- * 
- * @author Alexander
  * stores the vehicle's bid and time since entry of queue
+ * @author Alexander Humphry
+ * 
  */
 class QueueVehicle {
 	

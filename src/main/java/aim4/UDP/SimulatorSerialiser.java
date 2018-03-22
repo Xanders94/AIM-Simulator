@@ -195,9 +195,9 @@ public class SimulatorSerialiser {
 	}
 	/**
 	 * communicate the current simulator's vehicle list to this instance of simulator serialiser while generating a generic player vehicle
-	 * @param timeStep
-	 * @param vinToVehicles
-	 * @return
+	 * @param timeStep the current simulation time step
+	 * @param vinToVehicles a map of vehicles to their vin numbers
+	 * @return whether a player vehicle was generated
 	 */
 	public boolean setVinToVehicles(double timeStep, Map<Integer,VehicleSimView> vinToVehicles){
 		this.vinToVehicles = vinToVehicles;
@@ -211,11 +211,11 @@ public class SimulatorSerialiser {
 	/**
 	 * communicate the current simulator's vehicle list to this instance of simulator serialiser while generating a player vehicle with a specified
 	 * origin/destination pair and bid to control its behavior in the intersection and spawn location
-	 * @param timeStep
-	 * @param vinToVehicles
-	 * @param path
-	 * @param bid
-	 * @return
+	 * @param timeStep the current simulation time step
+	 * @param vinToVehicles a map of vehicles to their vin numbers
+	 * @param path the origin destination pair to be assigned as the path of the player vehicle in auto mode
+	 * @param bid the bid to be submitted by the player vehicle in auto mode if a bidding policy is in effect
+	 * @return whether a player vehicle was generated
 	 */
 	public boolean setVinToVehicles(double timeStep, Map<Integer,VehicleSimView> vinToVehicles, ODPair path, double bid){
 		this.vinToVehicles = vinToVehicles;
@@ -235,29 +235,30 @@ public class SimulatorSerialiser {
 		return false;
 	}
 	/**
-	 * send the current simulator parameters to the address and port targeted by this instance of simulator serialiser
-	 * @param timeStep
+	 * Send the current simulator parameters to the address and port targeted by this instance of simulator serialiser.
+	 * @param timeStep the current simulation time step
 	 */
 	public void send(double timeStep){
 		connection.send(serialize(timeStep));
 	}
 	/**
 	 * Receive and process a message from a communicating SimCreator simulator
-	 * @param timeStep
-	 * @return success
+	 * @param timeStep the current simulation time step
+	 * @return whether a transmission was successfully received and communicated to the player vehicle in AIM4
 	 */
 	public boolean recieve(double timeStep){
 		return deSerialise(connection.recieve(),timeStep);
 	}
 	/**
 	 * inject debug input to simulate communications with a SimCreator simulator
-	 * @param timeStep
+	 * @param timeStep the current simulation time step
 	 * @param debugInput message, format: [mode]#start#[auto mode engaged (1/0)]#[positionX]#[positionY]#[velocityX]#[velocityY]#[heading]#end
-	 * @return
+	 * @return whether the test transmission was successfully communicated to the player vehicle in AIM4
 	 */
 	public boolean recieve(double timeStep,String debugInput){
-		return deSerialise(debugInput+ Math.PI*16325.5+"#end",timeStep);
+		return deSerialise(debugInput,timeStep);
 	}
+	
 	private boolean deSerialise(String recieve,double timeStep) {
 		//message format start#<auto mode engaged (true/false)>#<positionX>#<positionY>#<velocityX>#
 		//<velocityY>#<heading>#end

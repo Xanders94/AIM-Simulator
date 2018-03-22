@@ -110,13 +110,13 @@ public class ReservationGridManager implements
     /**
      * Create a configuration object.
      *
-     * @param timeStep
-     * @param gridTimeStep
+     * @param timeStep The simulation time step 
+     * @param gridTimeStep The length of a descrete time step in the grid
      * @param staticBufferSize
      * @param internalTileTimeBufferSize
      * @param edgeTileTimeBufferSize
      * @param isEdgeTileTimeBufferEnabled
-     * @param granularity
+     * @param granularity The Granularity of the reservation grid
      */
     public Config(double timeStep,
                   double gridTimeStep,
@@ -586,27 +586,37 @@ public class ReservationGridManager implements
 		  return pos.distance(x, y);
 	  }
   }
-  //TODO
+  /**
+   * Generates and manages stored generic reservation plans to be used in the creation of vehicle/situation specific reservation plans.
+   * 
+   * @author Alexander Humphry
+   * 
+   */
   public class PlanStore{
 	  /**
-	   * The vehicle spec that the plans are attached to
+	   * A reference to the vehicle specification relevant to this PlanStore object.
 	   */
 	  public VehicleSpec vehicle;
 	  /**
-	   * The reference to the creating reservation grid manager
+	   * A reference to reservation grid manager relevant to this Plan Store object.
 	   */
 	  public ReservationGridManager gridMgmt;
 	  /**
-	   * List of Plans created for the vehicle specification
+	   * List of Plans created for the vehicle specification, each Plan in this list is related to a 
+	   * Query object in the {@link #queries queries list} at the same index.
 	   */
 	  public ArrayList<Plan> plans;
 	  
+	  /**
+	   * List of Queries created for the vehicle specification, each Query in this list is related to a 
+	   * Plan object in the {@link #plans plans list} at the same index.
+	   */
 	  public ArrayList<Query> queries;
 	  
 	  /**
-	   * create a set of generic vehicle plans
-	   * @param vehicleSpec
-	   * @param reservationGridManager 
+	   * Create a set of generic vehicle plans for a specific combination of vehicle and intersection.
+	   * @param vehicleSpec The vehicle specification this set of generic plans is generated from
+	   * @param reservationGridManager The reservation grid manager / intersection that this set of plans is generated from
 	   */
 	  public PlanStore(VehicleSpec vehicleSpec, ReservationGridManager reservationGridManager){
 		  vehicle = vehicleSpec;
@@ -617,6 +627,7 @@ public class ReservationGridManager implements
 	  }
 	/**
 	 * generate a set of generic plans for this vehicle on this intersection
+	 * @author Alexander Humphry
 	 */
 	private void generatePlans() {
 		//TODO generate plans for vehicle
@@ -692,14 +703,13 @@ public class ReservationGridManager implements
 	}
 	/**
 	 * retrieves a plan based on an arrival and departure lane id
+	 * @author Alexander Humphry
 	 * @param arrivalLaneId
 	 * @param departureLaneId
 	 * @return
 	 */
 	private Plan getPlan(int arrivalLaneId, int departureLaneId){
-		//TODO Auto-generated method stub
 		for(Plan plan : plans){
-			//TODO fix plan reversal problem then switch arrival and departure lanes back
 			if(plan.getArrivalLane().getId() == arrivalLaneId && plan.getDepartureLane().getId() == departureLaneId){
 				return plan;
 			}
@@ -749,9 +759,17 @@ public class ReservationGridManager implements
 	    }
 	    return accelerationProfile;
 	  }
-	
+	/**
+	 * Retrieves a plan based on an arrival and departure lane id.
+	 * @param vin The vin of the specific reserving vehicle
+	 * @param arrivalLaneId
+	 * @param departureLaneId
+	 * @param arrivalTime
+	 * @param arrivalVelocity
+	 * @param isAccelerating Whether acceleration of the vehicle over the intersection is permitted
+	 * @return The relevant base plan for modification
+	 */
 	public Plan retrieveCurrentPlan(int vin, int arrivalLaneId, int departureLaneId, double arrivalTime, double arrivalVelocity, boolean isAccelerating){
-		//TODO
 		Plan basePlan = getPlan(arrivalLaneId, departureLaneId);
 		
 		return basePlan;//.getNewPlan(this.getVehicleSpec(), arrivalTime, arrivalVelocity, vin, isAccelerating);

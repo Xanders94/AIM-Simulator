@@ -14,6 +14,12 @@ import aim4.map.lane.Lane;
 
 
 //not completed, need to construct arcs
+/**
+ * Generates conflict points from vehicle paths Note: unfinished, don't use.
+ * @author Alexander Humphry
+ * @deprecated
+ *
+ */
 public class ConflictPointGeneratorComplex implements ConflictPointGenerator {
 	//list of intersections for road objects
 	BasicMap map;
@@ -21,7 +27,9 @@ public class ConflictPointGeneratorComplex implements ConflictPointGenerator {
 	ConflictPointGeneratorComplex(BasicMap map){
 		this.map = map;
 	}
-	
+	/**
+	 * {@inheritDoc}
+	 */
 	public ArrayList<Point2D> generateConflictPoints(Intersection i, boolean restrictedTurning){
 		
 		ArrayList<Road> originRoads = new ArrayList<Road>(i.getEntryRoads());

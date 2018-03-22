@@ -152,6 +152,7 @@ public class Debug {
   }
 
   /**
+   * @param vin of the vehicle to test
    * @return Whether or not the simulator print the state of the target vehicle.
    */
   public static boolean isPrintVehicleStateOfVIN(int vin) {
@@ -160,6 +161,7 @@ public class Debug {
   }
 
   /**
+   * @param vin of the vehicle to test
    * @return Whether or not the simulator print the messages received by IM of the target vehicle.
    */
   public static boolean isPrintIMInboxMessageOfVIN(int vin) {

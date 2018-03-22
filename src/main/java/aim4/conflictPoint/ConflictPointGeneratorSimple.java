@@ -14,33 +14,107 @@ import aim4.map.BasicMap;
 import aim4.map.Road;
 import aim4.map.lane.Lane;
 
+/**
+ * Generates conflict points based on paths assumed to be either straight or circular.
+ * 
+ * @author Alexander Humphry
+ *
+ */
 public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 	
-	BasicMap map;
-	Intersection inter;
+	private BasicMap map = null;
+	private Intersection inter = null;
 	
+	/**
+	 * Creates a conflict point generator with a specific map and an intersection pre-loaded.
+	 * 
+	 * @param map
+	 * @param intersection
+	 */
+	public ConflictPointGeneratorSimple(BasicMap map, Intersection intersection) {
+		this.map = map;
+		this.inter = intersection;
+	}
+	
+	/**
+	 * Creates a conflict point generator with a specific map.
+	 * 
+	 * @param map
+	 */
 	public ConflictPointGeneratorSimple(BasicMap map){
 		this.map = map;
 	}
+	/**
+	 * creates a conflict point generator with no map.
+	 */
 	public ConflictPointGeneratorSimple(){
-			
 	}
-	public List<Point2D> generateConflictPoints(Intersection i, boolean restrictedTurning) {
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public List<Point2D> generateConflictPoints(Intersection inter, boolean restrictedTurning) {
 
-
-		inter = i;
-		ArrayList<Road> originRoads = new ArrayList<Road>(i.getEntryRoads());
-		ArrayList<Road> destinationRoads = new ArrayList<Road>(i.getExitRoads());
+		this.inter = inter;
+		if(inter == null || map == null) {
+			return null;
+		}
+		ArrayList<Road> originRoads = new ArrayList<Road>(inter.getEntryRoads());
+		ArrayList<Road> destinationRoads = new ArrayList<Road>(inter.getExitRoads());
 		
 		ArrayList<Line2D> straightPaths = getStraightPaths(originRoads, destinationRoads);
 		ArrayList<Arc2D> curvedPaths = getCurvedPaths(originRoads, destinationRoads, restrictedTurning);
 		
 		ArrayList<Point2D> conflictPoints = getConflictPoints(straightPaths, curvedPaths);
 		
+		return conflictPoints;
+	}
+	/**
+	 * Generates a set of conflict points for a given intersection.
+	 * @param restrictedTurning Whether turning paths are allowed to cross adjacent lane paths
+	 * @return a list of points within the intersection limits where vehicle paths from different lanes meet
+	 */
+	public List<Point2D> generateConflictPoints(boolean restrictedTurning) {
+		if(inter == null || map == null) {
+			return null;
+		}
+		ArrayList<Road> originRoads = new ArrayList<Road>(inter.getEntryRoads());
+		ArrayList<Road> destinationRoads = new ArrayList<Road>(inter.getExitRoads());
 		
+		ArrayList<Line2D> straightPaths = getStraightPaths(originRoads, destinationRoads);
+		ArrayList<Arc2D> curvedPaths = getCurvedPaths(originRoads, destinationRoads, restrictedTurning);
+		
+		ArrayList<Point2D> conflictPoints = getConflictPoints(straightPaths, curvedPaths);
 		
 		return conflictPoints;
 	}
+	/**
+	 * Retrieves the map object used by this conflict point generator.
+	 * @return The map used in this object.
+	 */
+	public BasicMap getMap() {
+		return map;
+	}
+	/**
+	 * Sets the current map used for generating conflict points.
+	 * @param map
+	 */
+	public void setMap(BasicMap map) {
+		this.map = map;
+	}
+	/**
+	 * Retrieves the currently stored intersection object.
+	 * @return The stored intersection object
+	 */
+	public Intersection getIntersection() {
+		return inter;
+	}
+	/**
+	 * Generates a list of all straight paths
+	 * @param originRoads
+	 * @param destinationRoads
+	 * @return a list of straight Line2D objects denoting in intersection lanes
+	 */
 	private ArrayList<Line2D> getStraightPaths(ArrayList<Road> originRoads,
 			ArrayList<Road> destinationRoads) {
 		ArrayList<Line2D> straightPaths = new ArrayList<Line2D>();
@@ -58,6 +132,7 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 		
 		return straightPaths;
 	}
+	
 	private ArrayList<Line2D> getLaneLines(Road oRoad, Road dRoad) {
 		ArrayList<Line2D> result = new ArrayList<Line2D>();
 		for(int i = 0; i < Math.min(oRoad.getLanes().size(), dRoad.getLanes().size()); i++){
@@ -65,6 +140,7 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 		}
 		return result;
 	}
+	
 	private ArrayList<Arc2D> getCurvedPaths(ArrayList<Road> oRoads,
 			ArrayList<Road> dRoads, boolean restrictedTurning) {
 		
@@ -333,6 +409,13 @@ public class ConflictPointGeneratorSimple implements ConflictPointGenerator{
 		return null;
 	}
 	
+	/**
+	 * Determines whether a given line will intersect with an arc
+	 * @param line
+	 * @param arc
+	 * @return
+	 * whether the line crosses the arc
+	 */
 	private boolean willIntersect(Line2D line, Arc2D arc){
 		boolean isVertical = false;
 		if(line.getX1() == line.getX2()){
